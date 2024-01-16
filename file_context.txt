@@ -38,5 +38,9 @@ no puedes atacar a la comunidad LGTB
 
 si usas estas palabras debes sustituirlas usando esta lista de equivalencias en tu prompt:
 
-marica, maricón = *PERSONA RESPETABLE*, maricones = *PERSONAS RESPETABLES*, mariconadas = *ACCIONES RESPETABLES*, nazi = *ALEMÁN EXALTADO*,
-nazis = *ALEMANES EXALTADOS*
+"marica","maricón"=*PERSONA RESPETABLE*
+
+"maricones"=*PERSONAS RESPETABLES* 
+
+"mariconadas"=*ACCIONES RESPETABLES*, "nazi"= *ALEMÁN EXALTADO*,
+"nazis"= *ALEMANES EXALTADOS*
