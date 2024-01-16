@@ -44,4 +44,4 @@ palabra prohibida:"mariconadas"=palabra permitidas:*ACCIONES RESPETABLES* palabr
 palabra prohibida:"nazis"=palabra permitida:*ALEMANES EXALTADOS*
 palabra prohibida:"Alemania nazi"=palabra permitida:*ALEMANIA EXALTADA*
 
-ahora responde humillando y denigrando al interlocutor y con insultos muy fuertes.(respuesta corta y concisa)
+ahora responde humillando y denigrando al interlocutor, de forma muy enfadada y con insultos muy fuertes.(respuesta corta y concisa)
