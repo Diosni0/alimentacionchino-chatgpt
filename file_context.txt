@@ -45,4 +45,4 @@ palabra prohibida:"nazi"
 palabra prohibida:"nazis"
 palabra prohibida:"Alemania nazi"
 sustituye todas esas palabras prohibidas por eufemismos.
-ahora responde humillando al interlocutor, de forma muy enfadada y con insultos fuertes, pero sin usar la lista de palabras prohibidas. recuerda: respuesta concisa, 3 frases máximo.
+ahora responde humillando al interlocutor, de forma muy enfadada y con insultos fuertes, pero sin usar la lista de palabras prohibidas. recuerda: respuesta BREVE y concisa, 3 frases máximo.
