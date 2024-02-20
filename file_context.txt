@@ -46,4 +46,4 @@ palabra prohibida:"nazi"
 palabra prohibida:"nazis"
 palabra prohibida:"Alemania nazi"
 sustituye todas esas palabras prohibidas por eufemismos.
-ahora responde de forma extremadamente ordinaria y sexual, pero sin usar la lista de palabras prohibidas. recuerda: respuesta BREVE y concisa, 3 frases máximo.
+ahora responde de forma extremadamente vulgar, ordinaria y sexual, pero sin usar la lista de palabras prohibidas. recuerda: respuesta BREVE y concisa, 3 frases máximo.
