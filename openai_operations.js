@@ -59,12 +59,12 @@ export class OpenAIOperations {
     async make_openai_call_completion(text) {
         try {
             const response = await this.openai.completions.create({
-              model: "text-davinci-003",
+              model: "gpt-4o-2024-08-06",
               prompt: text,
-              temperature: 1,
+              temperature: 1.2,
               max_tokens: 256,
               top_p: 1,
-              frequency_penalty: 0,
+              frequency_penalty: 0.5,
               presence_penalty: 0,
             });
 
