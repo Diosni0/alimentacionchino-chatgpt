@@ -82,9 +82,10 @@ bot.onMessage(async (channel, user, message, self) => {
     if (ENABLE_CHANNEL_POINTS === 'true' && user['msg-id'] === 'highlighted-message') {
         console.log(`Highlighted message: ${message}`);
         if (elapsedTime < COOLDOWN_DURATION) {
-            bot.say(channel, `No seas pesao. Espera ${COOLDOWN_DURATION - elapsedTime.toFixed(1)} antes de volver a darme la brasa.`);
-            return;
-        }
+    const remainingTime = Math.round(COOLDOWN_DURATION - elapsedTime); // Redondea al entero más cercano
+    bot.say(channel, `No seas pesao. Espera ${remainingTime} segundo${remainingTime !== 1 ? 's' : ''} antes de volver a darme la brasa.`);
+    return;
+}
         lastResponseTime = currentTime; // Update the last response time
 
         const response = await openaiOps.make_openai_call(message);
@@ -94,9 +95,10 @@ bot.onMessage(async (channel, user, message, self) => {
     const command = commandNames.find(cmd => message.toLowerCase().startsWith(cmd));
     if (command) {
         if (elapsedTime < COOLDOWN_DURATION) {
-            bot.say(channel, `No seas pesao. Espera ${COOLDOWN_DURATION - elapsedTime.toFixed(1)} antes de volver a darme la brasa.`);
-            return;
-        }
+    const remainingTime = Math.round(COOLDOWN_DURATION - elapsedTime); // Redondea al entero más cercano
+    bot.say(channel, `No seas pesao. Espera ${remainingTime} segundo${remainingTime !== 1 ? 's' : ''} antes de volver a darme la brasa.`);
+    return;
+    }
         lastResponseTime = currentTime; // Update the last response time
 
         let text = message.slice(command.length).trim();
