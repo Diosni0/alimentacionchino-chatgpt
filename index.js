@@ -82,7 +82,7 @@ bot.onMessage(async (channel, user, message, self) => {
     if (ENABLE_CHANNEL_POINTS === 'true' && user['msg-id'] === 'highlighted-message') {
         console.log(`Highlighted message: ${message}`);
         if (elapsedTime < COOLDOWN_DURATION) {
-            bot.say(channel, `Cooldown active. Please wait ${COOLDOWN_DURATION - elapsedTime.toFixed(1)} seconds before sending another message.`);
+            bot.say(channel, `No seas pesao. Espera ${COOLDOWN_DURATION - elapsedTime.toFixed(1)} antes de volver a darme la brasa.`);
             return;
         }
         lastResponseTime = currentTime; // Update the last response time
@@ -94,7 +94,7 @@ bot.onMessage(async (channel, user, message, self) => {
     const command = commandNames.find(cmd => message.toLowerCase().startsWith(cmd));
     if (command) {
         if (elapsedTime < COOLDOWN_DURATION) {
-            bot.say(channel, `Cooldown active. Please wait ${COOLDOWN_DURATION - elapsedTime.toFixed(1)} seconds before sending another message.`);
+            bot.say(channel, `No seas pesao. Espera ${COOLDOWN_DURATION - elapsedTime.toFixed(1)} antes de volver a darme la brasa.`);
             return;
         }
         lastResponseTime = currentTime; // Update the last response time
