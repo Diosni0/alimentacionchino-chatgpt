@@ -32,7 +32,7 @@ export class OpenAIOperations {
             const response = await this.openai.chat.completions.create({
                 model: this.model_name,
                 messages: this.messages,
-                temperature: 1,
+                temperature: 1.75,
                 max_tokens: 256,
                 top_p: 1,
                 frequency_penalty: 0,
