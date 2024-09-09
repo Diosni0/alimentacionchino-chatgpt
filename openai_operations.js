@@ -61,9 +61,9 @@ export class OpenAIOperations {
             const response = await this.openai.completions.create({
               model: "gpt-4o-2024-08-06",
               prompt: text,
-              temperature: 1.8,
+              temperature: 2,
               max_tokens: 256,
-              top_p: 1,
+              top_p: 0.95,
               frequency_penalty: 0.5,
               presence_penalty: 0,
             });
