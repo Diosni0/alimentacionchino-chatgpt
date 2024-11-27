@@ -33,7 +33,7 @@ export class OpenAIOperations {
                 model: this.model_name,
                 messages: this.messages,
                 temperature: 1,
-                max_tokens: 256,
+                max_tokens: 60,
                 top_p: 1,
                 frequency_penalty: 0.5,
                 presence_penalty: 0,
