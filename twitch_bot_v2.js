@@ -91,21 +91,21 @@ export class TwitchBotV2 {
         const username = userstate.username;
         const content = message;
 
-        // Check if user has permission to use the bot
-        if (TWITCH_CONFIG.SUBSCRIBERS_ONLY) {
-            const isSubscriber = userstate.subscriber || this.subscribers.has(username);
-            const isModerator = userstate.mod || this.moderators.has(username);
-            const hasPermission = isSubscriber || (isModerator && TWITCH_CONFIG.MODERATORS_BYPASS);
-            
-            if (!hasPermission) {
-                await this.sendMessage(channel, `@${username} Sorry, this bot is only available for subscribers!`);
-                return;
-            }
-        }
-
         // Handle commands
         const command = this.getCommand(content);
         if (command) {
+            // Check if user has permission to use the bot ONLY when they use a command
+            if (TWITCH_CONFIG.SUBSCRIBERS_ONLY) {
+                const isSubscriber = userstate.subscriber || this.subscribers.has(username);
+                const isModerator = userstate.mod || this.moderators.has(username);
+                const hasPermission = isSubscriber || (isModerator && TWITCH_CONFIG.MODERATORS_BYPASS);
+                
+                if (!hasPermission) {
+                    await this.sendMessage(channel, `@${username} Sorry, this bot is only available for subscribers!`);
+                    return;
+                }
+            }
+            
             await this.handleCommand(channel, username, content, command);
         }
     }
