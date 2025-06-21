@@ -1,7 +1,7 @@
 import tmi from 'tmi.js';
 import OpenAI from 'openai';
 import { promises as fsPromises } from 'fs';
-import { TWITCH_CONFIG, OPENAI_CONFIG } from './config.js';
+import { TWITCH_CONFIG, OPENAI_CONFIG, getFileContext } from './config.js';
 
 export class TwitchBotV2 {
     constructor() {
@@ -11,6 +11,7 @@ export class TwitchBotV2 {
         this.subscribers = new Set();
         this.moderators = new Set();
         this.lastResponseTime = 0;
+        this.fileContext = getFileContext();
     }
 
     async initialize() {
@@ -154,7 +155,7 @@ export class TwitchBotV2 {
             const response = await this.openai.chat.completions.create({
                 model: OPENAI_CONFIG.MODEL_NAME,
                 messages: [
-                    { role: "system", content: "You are a helpful Twitch Chatbot." },
+                    { role: "system", content: this.fileContext },
                     { role: "user", content: text }
                 ],
                 temperature: OPENAI_CONFIG.TEMPERATURE,
