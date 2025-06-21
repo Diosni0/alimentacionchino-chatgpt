@@ -1,13 +1,11 @@
-import { ApiClient } from '@twurple/api';
-import { ChatClient } from '@twurple/tmi';
+import tmi from 'tmi.js';
 import OpenAI from 'openai';
 import { promises as fsPromises } from 'fs';
 import { TWITCH_CONFIG, OPENAI_CONFIG } from './config.js';
 
 export class TwitchBotV2 {
     constructor() {
-        this.chatClient = null;
-        this.apiClient = null;
+        this.client = null;
         this.openai = new OpenAI({ apiKey: OPENAI_CONFIG.API_KEY });
         this.enable_tts = process.env.ENABLE_TTS === 'true';
         this.subscribers = new Set();
@@ -17,32 +15,25 @@ export class TwitchBotV2 {
 
     async initialize() {
         try {
-            // Create API client for subscription checking
-            if (TWITCH_CONFIG.CLIENT_ID && TWITCH_CONFIG.CLIENT_SECRET) {
-                this.apiClient = new ApiClient({
-                    clientId: TWITCH_CONFIG.CLIENT_ID,
-                    clientSecret: TWITCH_CONFIG.CLIENT_SECRET,
-                });
-            }
-
-            // Create chat client
-            this.chatClient = new ChatClient({
-                authProvider: {
-                    clientId: TWITCH_CONFIG.CLIENT_ID,
-                    clientSecret: TWITCH_CONFIG.CLIENT_SECRET,
-                    onRefresh: async (userId, newTokenData) => {
-                        console.log('Token refreshed for user', userId);
-                    },
+            // Create TMI client
+            this.client = new tmi.client({
+                connection: {
+                    reconnect: true,
+                    secure: true
                 },
-                channels: TWITCH_CONFIG.CHANNELS,
+                identity: {
+                    username: TWITCH_CONFIG.USERNAME,
+                    password: TWITCH_CONFIG.OAUTH_TOKEN
+                },
+                channels: TWITCH_CONFIG.CHANNELS
             });
 
             // Set up event handlers
             this.setupEventHandlers();
 
             // Connect to Twitch
-            await this.chatClient.connect();
-            console.log('Twurple Bot connected successfully!');
+            await this.client.connect();
+            console.log('TMI Bot connected successfully!');
 
             // Join channels
             for (const channel of TWITCH_CONFIG.CHANNELS) {
@@ -50,63 +41,59 @@ export class TwitchBotV2 {
             }
 
         } catch (error) {
-            console.error('Error initializing Twurple bot:', error);
+            console.error('Error initializing TMI bot:', error);
             throw error;
         }
     }
 
     setupEventHandlers() {
         // Handle incoming messages
-        this.chatClient.onMessage(async (channel, user, message, self) => {
+        this.client.on('message', async (channel, userstate, message, self) => {
             if (self) return;
-            await this.handleMessage(channel, user, message);
+            await this.handleMessage(channel, userstate, message);
         });
 
         // Handle subscription events
-        this.chatClient.onSub((channel, user) => {
-            const username = user;
+        this.client.on('subscription', (channel, username, method, message, userstate) => {
             this.subscribers.add(username);
             console.log(`New subscriber detected: ${username}`);
         });
 
         // Handle subscription end events
-        this.chatClient.onSubEnd((channel, user) => {
-            const username = user;
-            this.subscribers.delete(username);
-            console.log(`Subscription ended for: ${username}`);
+        this.client.on('resub', (channel, username, months, message, userstate, methods) => {
+            this.subscribers.add(username);
+            console.log(`Resub detected: ${username} for ${months} months`);
         });
 
         // Handle moderator events
-        this.chatClient.onMod((channel, user) => {
-            const username = user;
+        this.client.on('mod', (channel, username) => {
             this.moderators.add(username);
             console.log(`New moderator detected: ${username}`);
         });
 
-        this.chatClient.onUnmod((channel, user) => {
-            const username = user;
+        this.client.on('unmod', (channel, username) => {
             this.moderators.delete(username);
             console.log(`Moderator removed: ${username}`);
         });
 
         // Handle connection events
-        this.chatClient.onConnect(() => {
+        this.client.on('connected', (addr, port) => {
             console.log('Bot is ready!');
         });
 
-        this.chatClient.onDisconnect((reason) => {
+        this.client.on('disconnected', (reason) => {
             console.log('Bot disconnected:', reason);
         });
     }
 
-    async handleMessage(channel, user, message) {
-        const username = user;
+    async handleMessage(channel, userstate, message) {
+        const username = userstate.username;
         const content = message;
 
         // Check if user has permission to use the bot
         if (TWITCH_CONFIG.SUBSCRIBERS_ONLY) {
-            const isSubscriber = this.subscribers.has(username);
-            const isModerator = this.moderators.has(username);
+            const isSubscriber = userstate.subscriber || this.subscribers.has(username);
+            const isModerator = userstate.mod || this.moderators.has(username);
             const hasPermission = isSubscriber || (isModerator && TWITCH_CONFIG.MODERATORS_BYPASS);
             
             if (!hasPermission) {
@@ -186,7 +173,7 @@ export class TwitchBotV2 {
 
     async sendMessage(channel, message) {
         try {
-            await this.chatClient.say(channel, message);
+            await this.client.say(channel, message);
         } catch (error) {
             console.error('Error sending message:', error);
         }
@@ -215,8 +202,8 @@ export class TwitchBotV2 {
     }
 
     async disconnect() {
-        if (this.chatClient) {
-            await this.chatClient.disconnect();
+        if (this.client) {
+            await this.client.disconnect();
             console.log('Bot disconnected');
         }
     }

@@ -49,9 +49,9 @@ const bot = new TwitchBotV2();
 
 // Initialize and connect bot
 bot.initialize().then(() => {
-    console.log('Twurple Bot initialized successfully!');
+    console.log('TMI Bot initialized successfully!');
 }).catch(error => {
-    console.error('Failed to initialize Twurple bot:', error);
+    console.error('Failed to initialize TMI bot:', error);
     process.exit(1);
 });
 
