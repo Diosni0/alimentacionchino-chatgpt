@@ -1,20 +1,18 @@
 // Import modules
 import OpenAI from "openai";
+import { OPENAI_CONFIG } from './config.js';
 
 export class OpenAIOperations {
-    constructor(file_context, openai_key, model_name, history_length) {
+    constructor(file_context) {
         this.messages = [{role: "system", content: file_context}];
         this.openai = new OpenAI({
-            apiKey: openai_key,
+            apiKey: OPENAI_CONFIG.API_KEY,
         });
-        this.model_name = model_name;
-        this.history_length = history_length;
     }
 
     check_history_length() {
-        // Use template literals to concatenate strings
-        console.log(`Conversations in History: ${((this.messages.length / 2) -1)}/${this.history_length}`);
-        if(this.messages.length > ((this.history_length * 2) + 1)) {
+        console.log(`Conversations in History: ${((this.messages.length / 2) -1)}/${OPENAI_CONFIG.HISTORY_LENGTH}`);
+        if(this.messages.length > ((OPENAI_CONFIG.HISTORY_LENGTH * 2) + 1)) {
             console.log('Message amount in history exceeded. Removing oldest user and agent messages.');
             this.messages.splice(1,2);
         }
@@ -22,25 +20,25 @@ export class OpenAIOperations {
 
     async make_openai_call(text) {
         try {
-            //Add user message to  messages
+            //Add user message to messages
             this.messages.push({role: "user", content: text});
 
             //Check if message history is exceeded
             this.check_history_length();
 
-            // Use await to get the response from openai
+            // Use await to get the response from openai with updated parameters
             const response = await this.openai.chat.completions.create({
-                model: this.model_name,
+                model: OPENAI_CONFIG.MODEL_NAME,
                 messages: this.messages,
-                temperature: 1,
-                max_tokens: 60,
-                top_p: 1,
-                frequency_penalty: 0.5,
-                presence_penalty: 0,
+                temperature: OPENAI_CONFIG.TEMPERATURE,
+                max_tokens: OPENAI_CONFIG.MAX_TOKENS,
+                top_p: OPENAI_CONFIG.TOP_P,
+                frequency_penalty: OPENAI_CONFIG.FREQUENCY_PENALTY,
+                presence_penalty: OPENAI_CONFIG.PRESENCE_PENALTY,
             });
 
             // Check if response has choices
-            if (response.choices) {
+            if (response.choices && response.choices.length > 0) {
                 let agent_response = response.choices[0].message.content;
                 console.log(`Agent Response: ${agent_response}`);
                 this.messages.push({role: "assistant", content: agent_response});
@@ -51,7 +49,7 @@ export class OpenAIOperations {
             }
         } catch (error) {
             // Handle any errors that may occur
-            console.error(error);
+            console.error('OpenAI API Error:', error);
             return "Sorry, something went wrong. Please try again later.";
         }
     }
@@ -59,17 +57,17 @@ export class OpenAIOperations {
     async make_openai_call_completion(text) {
         try {
             const response = await this.openai.completions.create({
-              model: "gpt-4o-2024-08-06",
-              prompt: text,
-              temperature: 2,
-              max_tokens: 256,
-              top_p: 0.95,
-              frequency_penalty: 0.5,
-              presence_penalty: 0,
+                model: "gpt-4o-2024-08-06",
+                prompt: text,
+                temperature: OPENAI_CONFIG.TEMPERATURE,
+                max_tokens: OPENAI_CONFIG.MAX_TOKENS,
+                top_p: OPENAI_CONFIG.TOP_P,
+                frequency_penalty: OPENAI_CONFIG.FREQUENCY_PENALTY,
+                presence_penalty: OPENAI_CONFIG.PRESENCE_PENALTY,
             });
 
             // Check if response has choices
-            if (response.choices) {
+            if (response.choices && response.choices.length > 0) {
                 let agent_response = response.choices[0].text;
                 console.log(`Agent Response: ${agent_response}`);
                 return agent_response;
@@ -79,8 +77,19 @@ export class OpenAIOperations {
             }
         } catch (error) {
             // Handle any errors that may occur
-            console.error(error);
+            console.error('OpenAI API Error:', error);
             return "Sorry, something went wrong. Please try again later.";
         }
+    }
+
+    // Method to reset conversation history
+    resetHistory() {
+        this.messages = [this.messages[0]]; // Keep only the system message
+        console.log('Conversation history reset');
+    }
+
+    // Method to get current conversation length
+    getHistoryLength() {
+        return this.messages.length;
     }
 }
