@@ -179,7 +179,7 @@ export class TwitchBotV2 {
                 frequency_penalty: OPENAI_CONFIG.FREQUENCY_PENALTY,
                 presence_penalty: OPENAI_CONFIG.PRESENCE_PENALTY,
                 // Parar en puntos naturales para evitar cortes abruptos
-                stop: ["\n\n", "User:", "Human:", "Assistant:", "Bot:", "M-IA:"]
+                stop: ["\n\n", "User:", "Human:", "Assistant:"]
             });
 
             let responseText = response.choices[0].message.content;
