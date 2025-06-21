@@ -159,9 +159,12 @@ export class TwitchBotV2 {
             
             // Ajustar el contexto según los tokens disponibles
             let adjustedContext = this.fileContext;
-            if (availableTokens < 50) {
-                // Si quedan muy pocos tokens, usar contexto mínimo
-                adjustedContext = "Eres M-IA Khalifa, bot moderadora vacilona y directa del canal alimentacionchino. Responde de forma breve y sarcástica usando slang español.";
+            if (availableTokens < 30) {
+                // Si quedan muy pocos tokens, usar contexto ultra mínimo
+                adjustedContext = "Eres M-IA Khalifa. Responde en 1-2 frases cortas. Sé sarcástica.";
+            } else if (availableTokens < 50) {
+                // Contexto mínimo para respuestas cortas
+                adjustedContext = "Eres M-IA Khalifa, bot vacilona del canal alimentacionchino. Responde en máximo 2 frases. Sé directa y sarcástica.";
             } else if (availableTokens < 100) {
                 // Contexto medio
                 adjustedContext = "Eres M-IA Khalifa, bot moderadora vacilona del canal alimentacionchino (Yang). Responde de forma directa y sarcástica. Conoces a Yang, Xixi, Coco y los personajes del canal.";
@@ -174,7 +177,7 @@ export class TwitchBotV2 {
                     { role: "user", content: text }
                 ],
                 temperature: OPENAI_CONFIG.TEMPERATURE,
-                max_tokens: Math.max(availableTokens, 20), // Mínimo 20 tokens
+                max_tokens: Math.max(availableTokens, 15), // Mínimo 15 tokens para respuestas muy cortas
                 top_p: OPENAI_CONFIG.TOP_P,
                 frequency_penalty: OPENAI_CONFIG.FREQUENCY_PENALTY,
                 presence_penalty: OPENAI_CONFIG.PRESENCE_PENALTY,
