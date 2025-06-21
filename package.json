@@ -18,6 +18,8 @@
   },
   "homepage": "https://github.com/pedrojlazevedo/twitch-chatgpt#readme",
   "dependencies": {
+    "@twurple/api": "^8.0.0",
+    "@twurple/tmi": "^8.0.0",
     "cron": "^3.1.1",
     "dotenv": "^16.3.1",
     "ejs": "^3.1.9",
@@ -26,7 +28,6 @@
     "openai": "^4.28.0",
     "promisify": "^0.0.3",
     "request": "^2.88.2",
-    "twitchio": "^2.8.3",
     "ws": "^8.14.2"
   }
 }

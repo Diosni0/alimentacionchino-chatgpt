@@ -1,11 +1,13 @@
-import { Bot, createBot, IntentsBitField } from 'twitchio';
+import { ApiClient } from '@twurple/api';
+import { ChatClient } from '@twurple/tmi';
 import OpenAI from 'openai';
 import { promises as fsPromises } from 'fs';
 import { TWITCH_CONFIG, OPENAI_CONFIG } from './config.js';
 
 export class TwitchBotV2 {
     constructor() {
-        this.bot = null;
+        this.chatClient = null;
+        this.apiClient = null;
         this.openai = new OpenAI({ apiKey: OPENAI_CONFIG.API_KEY });
         this.enable_tts = process.env.ENABLE_TTS === 'true';
         this.subscribers = new Set();
@@ -15,103 +17,98 @@ export class TwitchBotV2 {
 
     async initialize() {
         try {
-            // Create bot instance
-            this.bot = createBot({
-                token: TWITCH_CONFIG.OAUTH_TOKEN,
-                username: TWITCH_CONFIG.USERNAME,
-                intents: [
-                    IntentsBitField.Flags.Guilds,
-                    IntentsBitField.Flags.GuildMessages,
-                    IntentsBitField.Flags.MessageContent,
-                    IntentsBitField.Flags.GuildMembers,
-                ],
+            // Create API client for subscription checking
+            if (TWITCH_CONFIG.CLIENT_ID && TWITCH_CONFIG.CLIENT_SECRET) {
+                this.apiClient = new ApiClient({
+                    clientId: TWITCH_CONFIG.CLIENT_ID,
+                    clientSecret: TWITCH_CONFIG.CLIENT_SECRET,
+                });
+            }
+
+            // Create chat client
+            this.chatClient = new ChatClient({
+                authProvider: {
+                    clientId: TWITCH_CONFIG.CLIENT_ID,
+                    clientSecret: TWITCH_CONFIG.CLIENT_SECRET,
+                    onRefresh: async (userId, newTokenData) => {
+                        console.log('Token refreshed for user', userId);
+                    },
+                },
+                channels: TWITCH_CONFIG.CHANNELS,
             });
 
             // Set up event handlers
             this.setupEventHandlers();
 
             // Connect to Twitch
-            await this.bot.connect();
-            console.log('TwitchIO Bot connected successfully!');
+            await this.chatClient.connect();
+            console.log('Twurple Bot connected successfully!');
 
             // Join channels
             for (const channel of TWITCH_CONFIG.CHANNELS) {
-                await this.bot.joinChannel(channel);
                 console.log(`Joined channel: ${channel}`);
             }
 
         } catch (error) {
-            console.error('Error initializing TwitchIO bot:', error);
+            console.error('Error initializing Twurple bot:', error);
             throw error;
         }
     }
 
     setupEventHandlers() {
         // Handle incoming messages
-        this.bot.on('messageCreate', async (message) => {
-            await this.handleMessage(message);
+        this.chatClient.onMessage(async (channel, user, message, self) => {
+            if (self) return;
+            await this.handleMessage(channel, user, message);
         });
 
         // Handle subscription events
-        this.bot.on('subscription', (subscription) => {
-            const username = subscription.user.username;
+        this.chatClient.onSub((channel, user) => {
+            const username = user;
             this.subscribers.add(username);
             console.log(`New subscriber detected: ${username}`);
         });
 
         // Handle subscription end events
-        this.bot.on('subscriptionEnd', (subscription) => {
-            const username = subscription.user.username;
+        this.chatClient.onSubEnd((channel, user) => {
+            const username = user;
             this.subscribers.delete(username);
             console.log(`Subscription ended for: ${username}`);
         });
 
         // Handle moderator events
-        this.bot.on('moderatorAdd', (moderator) => {
-            const username = moderator.user.username;
+        this.chatClient.onMod((channel, user) => {
+            const username = user;
             this.moderators.add(username);
             console.log(`New moderator detected: ${username}`);
         });
 
-        this.bot.on('moderatorRemove', (moderator) => {
-            const username = moderator.user.username;
+        this.chatClient.onUnmod((channel, user) => {
+            const username = user;
             this.moderators.delete(username);
             console.log(`Moderator removed: ${username}`);
         });
 
         // Handle connection events
-        this.bot.on('ready', () => {
+        this.chatClient.onConnect(() => {
             console.log('Bot is ready!');
         });
 
-        this.bot.on('disconnect', () => {
-            console.log('Bot disconnected');
+        this.chatClient.onDisconnect((reason) => {
+            console.log('Bot disconnected:', reason);
         });
     }
 
-    async handleMessage(message) {
-        // Ignore bot's own messages
-        if (message.author.username === TWITCH_CONFIG.USERNAME) {
-            return;
-        }
-
-        const username = message.author.username;
-        const channel = message.channel.name;
-        const content = message.content;
-        const isSubscriber = message.author.isSubscriber;
-        const isModerator = message.author.isModerator;
-
-        // Update our local sets
-        if (isSubscriber) {
-            this.subscribers.add(username);
-        }
-        if (isModerator) {
-            this.moderators.add(username);
-        }
+    async handleMessage(channel, user, message) {
+        const username = user;
+        const content = message;
 
         // Check if user has permission to use the bot
         if (TWITCH_CONFIG.SUBSCRIBERS_ONLY) {
+            const isSubscriber = this.subscribers.has(username);
+            const isModerator = this.moderators.has(username);
             const hasPermission = isSubscriber || (isModerator && TWITCH_CONFIG.MODERATORS_BYPASS);
+            
             if (!hasPermission) {
                 await this.sendMessage(channel, `@${username} Sorry, this bot is only available for subscribers!`);
                 return;
@@ -189,10 +186,7 @@ export class TwitchBotV2 {
 
     async sendMessage(channel, message) {
         try {
-            const channelObj = this.bot.channels.get(channel);
-            if (channelObj) {
-                await channelObj.send(message);
-            }
+            await this.chatClient.say(channel, message);
         } catch (error) {
             console.error('Error sending message:', error);
         }
@@ -221,8 +215,8 @@ export class TwitchBotV2 {
     }
 
     async disconnect() {
-        if (this.bot) {
-            await this.bot.disconnect();
+        if (this.chatClient) {
+            await this.chatClient.disconnect();
             console.log('Bot disconnected');
         }
     }
