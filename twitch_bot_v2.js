@@ -152,20 +152,42 @@ export class TwitchBotV2 {
 
     async generateResponse(text) {
         try {
+            // Calcular tokens disponibles (aproximadamente)
+            const contextTokens = Math.ceil(this.fileContext.length / 4); // ~4 chars por token
+            const inputTokens = Math.ceil(text.length / 4);
+            const availableTokens = OPENAI_CONFIG.MAX_TOKENS - (contextTokens + inputTokens);
+            
+            // Ajustar el contexto según los tokens disponibles
+            let adjustedContext = this.fileContext;
+            if (availableTokens < 50) {
+                // Si quedan muy pocos tokens, usar contexto mínimo
+                adjustedContext = "Eres M-IA Khalifa, bot moderadora vacilona y directa del canal alimentacionchino. Responde de forma breve y sarcástica usando slang español.";
+            } else if (availableTokens < 100) {
+                // Contexto medio
+                adjustedContext = "Eres M-IA Khalifa, bot moderadora vacilona del canal alimentacionchino (Yang). Responde de forma directa y sarcástica. Conoces a Yang, Xixi, Coco y los personajes del canal.";
+            }
+            
             const response = await this.openai.chat.completions.create({
                 model: OPENAI_CONFIG.MODEL_NAME,
                 messages: [
-                    { role: "system", content: this.fileContext },
+                    { role: "system", content: adjustedContext },
                     { role: "user", content: text }
                 ],
                 temperature: OPENAI_CONFIG.TEMPERATURE,
-                max_tokens: OPENAI_CONFIG.MAX_TOKENS,
+                max_tokens: Math.max(availableTokens, 20), // Mínimo 20 tokens
                 top_p: OPENAI_CONFIG.TOP_P,
                 frequency_penalty: OPENAI_CONFIG.FREQUENCY_PENALTY,
                 presence_penalty: OPENAI_CONFIG.PRESENCE_PENALTY,
+                // Parar en puntos naturales para evitar cortes abruptos
+                stop: ["\n\n", "User:", "Human:", "Assistant:", "Bot:", "M-IA:"]
             });
 
-            return response.choices[0].message.content;
+            let responseText = response.choices[0].message.content;
+            
+            // Limpiar espacios extra
+            responseText = responseText.trim().replace(/\s+/g, ' ');
+            
+            return responseText;
         } catch (error) {
             console.error('OpenAI API Error:', error);
             throw error;
