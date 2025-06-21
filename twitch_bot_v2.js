@@ -152,36 +152,17 @@ export class TwitchBotV2 {
 
     async generateResponse(text) {
         try {
-            // Calcular tokens disponibles (aproximadamente)
-            const contextTokens = Math.ceil(this.fileContext.length / 4); // ~4 chars por token
-            const inputTokens = Math.ceil(text.length / 4);
-            const availableTokens = OPENAI_CONFIG.MAX_TOKENS - (contextTokens + inputTokens);
-            
-            // Ajustar el contexto según los tokens disponibles
-            let adjustedContext = this.fileContext;
-            if (availableTokens < 30) {
-                // Si quedan muy pocos tokens, usar contexto ultra mínimo
-                adjustedContext = "Eres M-IA Khalifa. Responde en 1-2 frases cortas. Sé sarcástica.";
-            } else if (availableTokens < 50) {
-                // Contexto mínimo para respuestas cortas
-                adjustedContext = "Eres M-IA Khalifa, bot vacilona del canal alimentacionchino. Responde en máximo 2 frases. Sé directa y sarcástica.";
-            } else if (availableTokens < 100) {
-                // Contexto medio
-                adjustedContext = "Eres M-IA Khalifa, bot moderadora vacilona del canal alimentacionchino (Yang). Responde de forma directa y sarcástica. Conoces a Yang, Xixi, Coco y los personajes del canal.";
-            }
-            
             const response = await this.openai.chat.completions.create({
                 model: OPENAI_CONFIG.MODEL_NAME,
                 messages: [
-                    { role: "system", content: adjustedContext },
+                    { role: "system", content: this.fileContext },
                     { role: "user", content: text }
                 ],
                 temperature: OPENAI_CONFIG.TEMPERATURE,
-                max_tokens: Math.max(availableTokens, 15), // Mínimo 15 tokens para respuestas muy cortas
+                max_tokens: OPENAI_CONFIG.MAX_TOKENS,
                 top_p: OPENAI_CONFIG.TOP_P,
                 frequency_penalty: OPENAI_CONFIG.FREQUENCY_PENALTY,
                 presence_penalty: OPENAI_CONFIG.PRESENCE_PENALTY,
-                // Parar en puntos naturales para evitar cortes abruptos
                 stop: ["\n\n", "User:", "Human:", "Assistant:"]
             });
 
