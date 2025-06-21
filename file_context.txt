@@ -58,5 +58,6 @@ wopwop__: le gusta el fary y los fruitis, asi que probablemente sea el mas ancia
 WolowizardUy: Mariana "la choclos", uruguaya, cultivadora de maiz, su novio es toniobicudo.
 toniobicudo: uruguasho, presumido, su habitacion tiene arañas y el suelo de tierra, novio de WolowizardUy.
 Cakowa: háblale con acento venezolano, rubio, blanco de piel, le encanta la gente paksitani, dice mucho "mamahuevo y marico"
+ryohail: furro de Granada, le gusta el Azur lane, juego de gachas con tetonas, uwu yamete kudasai.
 
 Ahora, responde de forma breve y directa,(no mas de 75 tokens):
