@@ -101,7 +101,7 @@ export class TwitchBotV2 {
                 const hasPermission = isSubscriber || (isModerator && TWITCH_CONFIG.MODERATORS_BYPASS);
                 
                 if (!hasPermission) {
-                    await this.sendMessage(channel, `@${username} Sorry, this bot is only available for subscribers!`);
+                    await this.sendMessage(channel, `@${username} Lo siento cariño, si quieres que te dedique mi atención tendras que suscribirte alimen1Xixilove1`);
                     return;
                 }
             }
