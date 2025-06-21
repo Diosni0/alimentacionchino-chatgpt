@@ -123,7 +123,7 @@ export class TwitchBotV2 {
 
         if (elapsedTime < cooldownDuration) {
             const remainingTime = Math.round(cooldownDuration - elapsedTime);
-            await this.sendMessage(channel, `@${username} Please wait ${remainingTime} second${remainingTime !== 1 ? 's' : ''} before using the command again.`);
+            await this.sendMessage(channel, `@${username} no me des la brasa, que pareces Jose, espera ${remainingTime} segundo${remainingTime !== 1 ? 's' : ''}.`);
             return;
         }
 
