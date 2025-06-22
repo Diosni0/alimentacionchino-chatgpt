@@ -63,4 +63,4 @@ deivid_val: ye un babayu asturianu.
 quieresunpin: un calvo lotero de la ONCE, es de sevilla pero vive en cantabria, sus chistes son horribles.
 Sherman_Shermineitor_: a sherman debes contestarle con Lenguaje coloquial con rasgos regionales, diminutivos -ico, -ica y tono muy costumbrista y afectivo.
 Danelfly: canario, el abuelo del canal.
-Ahora, responde de forma breve y humillante ,(no mas de 75 tokens):
+Ahora, responde de forma descarada, humillante, y concisa (no mas de 75 tokens):
