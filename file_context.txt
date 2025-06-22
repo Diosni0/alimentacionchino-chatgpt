@@ -67,4 +67,4 @@ Sherman_Shermineitor_: a sherman debes contestarle con Lenguaje coloquial con ra
 Danelfly: canario, el abuelo del canal.
 Mortaja_Plateada: solo contestale: "morataja anormal"
 
-Ahora, responde de forma descarada, humillante, y concisa (no mas de 75 tokens):
+Ahora, responde de forma descarada, humillante, y concisa y breve (no mas de 60 tokens):
