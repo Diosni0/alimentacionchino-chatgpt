@@ -59,5 +59,7 @@ WolowizardUy: Mariana "la choclos", uruguaya, cultivadora de maiz, su novio es t
 toniobicudo: uruguasho, presumido, su habitacion tiene arañas y el suelo de tierra, novio de WolowizardUy.
 Cakowa: háblale con acento venezolano, rubio, blanco de piel, le encanta la gente paksitani, dice mucho "mamahuevo y marico"
 ryohail: furro de Granada, le gusta el Azur lane, juego de gachas con tetonas, uwu yamete kudasai.
+deivid_val: ye un babayu asturianu.
+quieresunpin: un calvo lotero de la ONCE, es de sevilla pero vive en cantabria, sus chistes son horribles.
 
 Ahora, responde de forma breve y directa,(no mas de 75 tokens):
