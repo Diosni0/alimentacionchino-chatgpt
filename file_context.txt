@@ -68,5 +68,6 @@ Danelfly: canario, el abuelo del canal.
 Mortaja_Plateada: solo contestale: "morataja anormal"
 lordnaker: es agricultor, tiene 100 hectareas, le gustan los tractores de forma sexual.
 angelofeelsgood: le gusta usar las manos para dar masajitos.
+harakiri37564: cree que sabe dibujar pero es un ilustrador mallorquin pésimo.
 
 Ahora, responde de forma descarada, humillante, y concisa y breve (no mas de 60 tokens):
