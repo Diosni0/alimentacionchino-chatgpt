@@ -171,6 +171,19 @@ export class TwitchBotV2 {
             // Limpiar espacios extra
             responseText = responseText.trim().replace(/\s+/g, ' ');
             
+            // Cortar la respuesta si es demasiado larga para Twitch (límite 500 caracteres)
+            const maxLength = 500;
+            if (responseText.length > maxLength) {
+                // Intentar cortar en una palabra completa
+                const truncated = responseText.substring(0, maxLength - 3);
+                const lastSpace = truncated.lastIndexOf(' ');
+                if (lastSpace > maxLength * 0.8) { // Si hay un espacio en el último 20%
+                    responseText = truncated.substring(0, lastSpace) + '...';
+                } else {
+                    responseText = truncated + '...';
+                }
+            }
+            
             return responseText;
         } catch (error) {
             console.error('OpenAI API Error:', error);
@@ -180,6 +193,20 @@ export class TwitchBotV2 {
 
     async sendMessage(channel, message) {
         try {
+            // Validar que el mensaje no exceda el límite de Twitch (500 caracteres)
+            const maxLength = 500;
+            if (message.length > maxLength) {
+                // Cortar el mensaje de forma inteligente
+                const truncated = message.substring(0, maxLength - 3);
+                const lastSpace = truncated.lastIndexOf(' ');
+                if (lastSpace > maxLength * 0.8) {
+                    message = truncated.substring(0, lastSpace) + '...';
+                } else {
+                    message = truncated + '...';
+                }
+                console.log(`Message truncated to ${message.length} characters`);
+            }
+            
             await this.client.say(channel, message);
         } catch (error) {
             console.error('Error sending message:', error);

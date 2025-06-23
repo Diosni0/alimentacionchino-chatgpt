@@ -9,7 +9,7 @@ export const OPENAI_CONFIG = {
     API_KEY: process.env.OPENAI_API_KEY || '',
     MODEL_NAME: process.env.MODEL_NAME || 'gpt-4o-mini',
     TEMPERATURE: parseFloat(process.env.TEMPERATURE) || 1.0,
-    MAX_TOKENS: parseInt(process.env.MAX_TOKENS) || 150,
+    MAX_TOKENS: parseInt(process.env.MAX_TOKENS) || 80,
     TOP_P: parseFloat(process.env.TOP_P) || 1.0,
     FREQUENCY_PENALTY: parseFloat(process.env.FREQUENCY_PENALTY) || 0.5,
     PRESENCE_PENALTY: parseFloat(process.env.PRESENCE_PENALTY) || 0.0,
@@ -35,7 +35,7 @@ export const BOT_CONFIG = {
     ENABLE_TTS: process.env.ENABLE_TTS === 'true' || false,
     ENABLE_CHANNEL_POINTS: process.env.ENABLE_CHANNEL_POINTS === 'true' || false,
     COOLDOWN_DURATION: parseInt(process.env.COOLDOWN_DURATION) || 10,
-    MAX_MESSAGE_LENGTH: parseInt(process.env.MAX_MESSAGE_LENGTH) || 399
+    MAX_MESSAGE_LENGTH: parseInt(process.env.MAX_MESSAGE_LENGTH) || 450
 };
 
 // Server Configuration
