@@ -12,6 +12,8 @@ export class TwitchBotV2 {
         this.moderators = new Set();
         this.lastResponseTime = 0;
         this.fileContext = getFileContext();
+        // Historial de mensajes para el chat (usuario y bot)
+        this.chatHistory = [{ role: 'system', content: this.fileContext }];
     }
 
     async initialize() {
@@ -135,9 +137,21 @@ export class TwitchBotV2 {
             text = `Message from user ${username}: ${text}`;
         }
 
-        // Generate response using OpenAI
+        // Añadir mensaje del usuario al historial
+        this.chatHistory.push({ role: 'user', content: text });
+        // Limitar historial según HISTORY_LENGTH (pares user/assistant)
+        const maxHistory = OPENAI_CONFIG.HISTORY_LENGTH;
+        // chatHistory: [system, user, assistant, user, assistant, ...]
+        // Mantener solo los últimos N pares + system
+        while (this.chatHistory.length > (maxHistory * 2 + 1)) {
+            this.chatHistory.splice(1, 2); // Elimina el par más antiguo (user+assistant)
+        }
+
+        // Generar respuesta usando historial
         try {
-            const response = await this.generateResponse(text);
+            const response = await this.generateResponseWithHistory();
+            // Añadir respuesta del bot al historial
+            this.chatHistory.push({ role: 'assistant', content: response });
             await this.sendMessage(channel, `@${username} ${response}`);
 
             // Handle TTS if enabled
@@ -150,14 +164,11 @@ export class TwitchBotV2 {
         }
     }
 
-    async generateResponse(text) {
+    async generateResponseWithHistory() {
         try {
             const response = await this.openai.chat.completions.create({
                 model: OPENAI_CONFIG.MODEL_NAME,
-                messages: [
-                    { role: "system", content: this.fileContext },
-                    { role: "user", content: text }
-                ],
+                messages: this.chatHistory,
                 temperature: OPENAI_CONFIG.TEMPERATURE,
                 max_tokens: OPENAI_CONFIG.MAX_TOKENS,
                 top_p: OPENAI_CONFIG.TOP_P,
@@ -167,23 +178,19 @@ export class TwitchBotV2 {
             });
 
             let responseText = response.choices[0].message.content;
-            
             // Limpiar espacios extra
             responseText = responseText.trim().replace(/\s+/g, ' ');
-            
             // Cortar la respuesta si es demasiado larga para Twitch (límite 500 caracteres)
             const maxLength = 500;
             if (responseText.length > maxLength) {
-                // Intentar cortar en una palabra completa
                 const truncated = responseText.substring(0, maxLength - 3);
                 const lastSpace = truncated.lastIndexOf(' ');
-                if (lastSpace > maxLength * 0.8) { // Si hay un espacio en el último 20%
+                if (lastSpace > maxLength * 0.8) {
                     responseText = truncated.substring(0, lastSpace) + '...';
                 } else {
                     responseText = truncated + '...';
                 }
             }
-            
             return responseText;
         } catch (error) {
             console.error('OpenAI API Error:', error);
