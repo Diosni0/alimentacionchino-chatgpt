@@ -210,16 +210,29 @@ export class UltraOptimizedTwitchBot {
         }
 
         try {
-            const response = await this.openai.chat.completions.create({
+            // Check if it's a reasoning model (o1 series)
+            const isReasoningModel = OPENAI_CONFIG.MODEL_NAME.startsWith('o1');
+            
+            let requestConfig = {
                 model: OPENAI_CONFIG.MODEL_NAME,
-                messages: [...this.chatHistory, { role: 'user', content: text }],
-                temperature: OPENAI_CONFIG.TEMPERATURE,
-                max_tokens: OPENAI_CONFIG.MAX_TOKENS,
-                top_p: OPENAI_CONFIG.TOP_P,
-                frequency_penalty: OPENAI_CONFIG.FREQUENCY_PENALTY,
-                presence_penalty: OPENAI_CONFIG.PRESENCE_PENALTY,
-                stop: ["\n\n", "User:", "Human:", "Assistant:"]
-            });
+                messages: [...this.chatHistory, { role: 'user', content: text }]
+            };
+
+            if (isReasoningModel) {
+                // Configuration for o1 models (reasoning models)
+                requestConfig.max_completion_tokens = OPENAI_CONFIG.MAX_TOKENS;
+                // o1 models don't support temperature, top_p, frequency_penalty, presence_penalty, or stop
+            } else {
+                // Configuration for regular models (gpt-4, gpt-3.5-turbo, etc.)
+                requestConfig.temperature = OPENAI_CONFIG.TEMPERATURE;
+                requestConfig.max_tokens = OPENAI_CONFIG.MAX_TOKENS;
+                requestConfig.top_p = OPENAI_CONFIG.TOP_P;
+                requestConfig.frequency_penalty = OPENAI_CONFIG.FREQUENCY_PENALTY;
+                requestConfig.presence_penalty = OPENAI_CONFIG.PRESENCE_PENALTY;
+                requestConfig.stop = ["\n\n", "User:", "Human:", "Assistant:"];
+            }
+
+            const response = await this.openai.chat.completions.create(requestConfig);
 
             // Circuit breaker success
             this.circuitBreaker.failures = 0;
