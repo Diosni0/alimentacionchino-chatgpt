@@ -210,8 +210,14 @@ export class UltraOptimizedTwitchBot {
         }
 
         try {
-            // Check if it's a reasoning model (o1 series)
-            const isReasoningModel = OPENAI_CONFIG.MODEL_NAME.startsWith('o1');
+            // Check if it's a reasoning model (o1 or o4 series)
+            const modelName = OPENAI_CONFIG.MODEL_NAME.toLowerCase();
+            const isReasoningModel = modelName.includes('o1-mini') || modelName.includes('o1-preview') || 
+                                   modelName.includes('o4-mini') || modelName.includes('o4-preview') ||
+                                   modelName.startsWith('o1') || modelName.startsWith('o4');
+            
+            // Debug log to verify model detection
+            console.log(`Using model: ${OPENAI_CONFIG.MODEL_NAME}, detected as reasoning model: ${isReasoningModel}`);
             
             let requestConfig = {
                 model: OPENAI_CONFIG.MODEL_NAME,
