@@ -240,12 +240,20 @@ export class UltraOptimizedTwitchBot {
 
             const response = await this.openai.chat.completions.create(requestConfig);
 
+            // Debug: Log the raw response
+            const rawContent = response.choices[0].message.content;
+            console.log(`Raw API response: "${rawContent}"`);
+            console.log(`Response length: ${rawContent ? rawContent.length : 0}`);
+
             // Circuit breaker success
             this.circuitBreaker.failures = 0;
             this.circuitBreaker.state = 'CLOSED';
             this.rateLimiter.adaptiveDelay = Math.max(0, this.rateLimiter.adaptiveDelay - 100);
 
-            return this.truncateResponse(response.choices[0].message.content.trim());
+            const finalResponse = this.truncateResponse(rawContent.trim());
+            console.log(`Final response: "${finalResponse}"`);
+            
+            return finalResponse;
             
         } catch (error) {
             this.handleApiError(error);
