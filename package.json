@@ -5,7 +5,12 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "start:optimized": "node index_optimized.js",
+    "start:ultra": "node index_ultra_optimized.js",
+    "dev": "node --inspect index_optimized.js",
+    "dev:ultra": "node --inspect index_ultra_optimized.js",
+    "test": "node --test"
   },
   "repository": {
     "type": "git",
