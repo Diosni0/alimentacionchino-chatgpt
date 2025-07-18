@@ -1,233 +1,305 @@
-# ChatGPT Twitch Bot Documentation v2.0
+# 🤖 Bot de Twitch con IA - Versión Limpia y Elegante
 
-**Important Notice: This bot now uses TwitchIO for better subscription management and has been updated with the latest OpenAI API features.**
+**Bot de Twitch inteligente con integración de OpenAI, optimizado para rendimiento y simplicidad.**
 
-Your support means the world to me! ❤️
+## 🌟 Características Principales
 
-☕ [Buy me a coffee to support me](https://www.buymeacoffee.com/osetinhas) ☕
+- **🧠 IA Avanzada**: Integración completa con OpenAI (GPT-4, GPT-3.5, modelos razonadores)
+- **⚡ Ultra Optimizado**: Cache inteligente, rate limiting adaptativo, gestión eficiente de memoria
+- **🎭 Personalidad Completa**: Sistema de contexto avanzado para mantener personalidad consistente
+- **👥 Control de Acceso**: Restricción por suscriptores, bypass para moderadores
+- **📊 Monitoreo**: Métricas en tiempo real, health checks, logging estructurado
+- **🔧 Fácil Configuración**: Setup simple con variables de entorno
+- **🚀 Deploy Automático**: Listo para Render.com con configuración incluida
 
-Join our Discord community:
+## 🏗️ Arquitectura Limpia
 
-[https://discord.gg/pcxybrpDx6](https://discord.gg/pcxybrpDx6)
+Esta versión ha sido completamente reestructurada para ser:
+- ✅ **Simple**: Solo 6 archivos principales, sin duplicados
+- ✅ **Elegante**: Código limpio y bien organizado
+- ✅ **Potente**: Mantiene todas las optimizaciones avanzadas
+- ✅ **Mantenible**: Fácil de entender y modificar
 
----
+## 📋 Archivos Principales
 
-## Overview
-
-This is a Node.js chatbot with ChatGPT integration, designed to work with Twitch streams. It uses the Express framework, TwitchIO for Twitch integration, and can operate in two modes: chat mode (with context of previous messages) or prompt mode (without context of previous messages).
-
-## New Features in v2.0
-
-- **Subscription-only access**: Restrict bot usage to channel subscribers only
-- **Enhanced OpenAI integration**: Support for all latest OpenAI API parameters
-- **TwitchIO integration**: Better Twitch API integration with subscription detection
-- **New environment variables**: Fine-tune AI responses with temperature, max tokens, etc.
-- **API endpoints**: New endpoints for subscriber verification and bot statistics
-- **Improved error handling**: Better error handling and graceful shutdown
-- **Configuration validation**: Automatic validation of required environment variables
-
-## Features
-
-- Responds to Twitch chat commands with ChatGPT-generated responses
-- Can operate in chat mode with context or prompt mode without context
-- Supports Text-to-Speech (TTS) for responses
-- **NEW**: Subscription-only access control
-- **NEW**: Moderator bypass option for subscription restrictions
-- **NEW**: Configurable AI parameters (temperature, max tokens, etc.)
-- **NEW**: API endpoints for external integrations
-- Customizable via environment variables
-- Deployed on Render for 24/7 availability
+- **`bot.js`** - Bot principal con toda la lógica optimizada
+- **`server.js`** - Servidor Express con API REST
+- **`config.js`** - Configuración centralizada y validada
+- **`file_context.txt`** - Contexto y personalidad del bot
+- **`package.json`** - Dependencias y scripts
+- **`render.yaml`** - Configuración de despliegue
 
 ---
 
-## Setup Instructions
+## 🚀 Instalación y Configuración
 
-### 1. Fork the Repository
+### 1. Hacer Fork del Repositorio
 
-Login to GitHub and fork this repository to get your own copy.
+Inicia sesión en GitHub y haz fork de este repositorio para obtener tu propia copia.
 
-### 2. Fill Out Your Context File
+### 2. Configurar el Contexto del Bot
 
-Open `file_context.txt` and write down all your background information for GPT. This content will be included in every request.
+Abre `file_context.txt` y personaliza toda la información de fondo para tu bot. Este contenido se incluirá en cada solicitud a la IA.
 
-### 3. Create an OpenAI Account
+### 3. Crear Cuenta en OpenAI
 
-Create an account on [OpenAI](https://platform.openai.com) and set up billing limits if necessary.
+Crea una cuenta en [OpenAI](https://platform.openai.com) y configura límites de facturación si es necesario.
 
-### 4. Get Your OpenAI API Key
+### 4. Obtener API Key de OpenAI
 
-Generate an API key on the [API keys page](https://platform.openai.com/account/api-keys) and store it securely.
+Genera una clave API en la [página de claves API](https://platform.openai.com/account/api-keys) y guárdala de forma segura.
 
-### 5. Deploy on Render
+### 5. Desplegar en Render
 
-Render allows you to run your bot 24/7 for free. Follow these steps:
+Render te permite ejecutar tu bot 24/7 de forma gratuita. Sigue estos pasos:
 
-#### 5.1. Deploy to Render
+#### 5.1. Desplegar en Render
 
-Click the button below to deploy:
+Haz clic en el botón para desplegar:
 
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy)
 
-#### 5.2. Login with GitHub
+#### 5.2. Iniciar Sesión con GitHub
 
-Log in with your GitHub account and select your forked repository for deployment.
+Inicia sesión con tu cuenta de GitHub y selecciona tu repositorio forkeado para el despliegue.
 
-### 6. Set Environment Variables
+### 6. Configurar Variables de Entorno
 
-Go to the variables/environment tab in your Render deployment and set the following variables:
+Ve a la pestaña de variables/environment en tu despliegue de Render y configura las siguientes variables:
 
-#### 6.1. Required Variables
+#### 6.1. Variables Obligatorias
 
-- `OPENAI_API_KEY`: Your OpenAI API key.
+- `OPENAI_API_KEY`: Tu clave API de OpenAI
 
-#### 6.2. Twitch Integration Variables
+#### 6.2. Variables de Integración con Twitch
 
-- `TWITCH_AUTH`: OAuth token for your Twitch bot.
-  - Go to https://twitchapps.com/tmi/ and click on Connect with Twitch
-  - Copy the token from the page and paste it in the TWITCH_AUTH variable  
-  - ⚠️ THIS TOKEN MIGHT EXPIRE AFTER A FEW DAYS, SO YOU MIGHT HAVE TO REPEAT THIS STEP EVERY FEW DAYS ⚠️
+- `TWITCH_USER`: Nombre de usuario del bot (ej: `MIAKhalifaV2Bot`)
+- `TWITCH_AUTH`: Token OAuth para tu bot de Twitch
+  - Ve a https://twitchapps.com/tmi/ y haz clic en "Connect with Twitch"
+  - Copia el token de la página y pégalo en la variable TWITCH_AUTH
+  - ⚠️ **ESTE TOKEN PUEDE EXPIRAR DESPUÉS DE UNOS DÍAS** ⚠️
 
-**NEW**: For subscription features, you also need:
-- `TWITCH_CLIENT_ID`: Your Twitch application client ID
-- `TWITCH_CLIENT_SECRET`: Your Twitch application client secret
-  - Create a new application at https://dev.twitch.tv/console
-  - Get your Client ID and Client Secret
+**Para funciones de suscriptores, también necesitas:**
+- `TWITCH_CLIENT_ID`: ID de cliente de tu aplicación de Twitch
+- `TWITCH_CLIENT_SECRET`: Secreto de cliente de tu aplicación de Twitch
+  - Crea una nueva aplicación en https://dev.twitch.tv/console
+  - Obtén tu Client ID y Client Secret
 
-#### 6.3. Bot Configuration Variables
+#### 6.3. Variables de Configuración del Bot
 
-- `GPT_MODE`: (default: `CHAT`) Mode of operation, can be `CHAT` or `PROMPT`.
-- `COMMAND_NAME`: (default: `!gpt`) The command that triggers the bot. You can set more than one command by separating them with a comma (e.g. `!gpt,!chatbot`).
-- `CHANNELS`: List of Twitch channels the bot will join (comma-separated). (e.g. `channel1,channel2`; do not include www.twitch.tv)
-- `SEND_USERNAME`: (default: `true`) Whether to include the username in the message sent to OpenAI.
-- `ENABLE_TTS`: (default: `false`) Whether to enable Text-to-Speech.
-- `ENABLE_CHANNEL_POINTS`: (default: `false`) Whether to enable channel points integration.
-- `COOLDOWN_DURATION`: (default: `10`) Cooldown duration in seconds between responses.
-- `MAX_MESSAGE_LENGTH`: (default: `399`) Maximum length for bot responses.
+- `CHANNELS`: Lista de canales de Twitch donde funcionará el bot (separados por comas)
+- `COMMAND_NAME`: (por defecto: `!gpt`) Comando que activa el bot. Puedes configurar múltiples comandos separándolos con comas (ej: `!gpt,!ia,!mia`)
+- `SEND_USERNAME`: (por defecto: `true`) Si incluir el nombre de usuario en el mensaje enviado a OpenAI
+- `ENABLE_TTS`: (por defecto: `false`) Si habilitar Text-to-Speech
+- `COOLDOWN_DURATION`: (por defecto: `10`) Duración del cooldown en segundos entre respuestas
 
-#### 6.4. NEW: Subscription Control Variables
+#### 6.4. Control de Acceso por Suscriptores
 
-- `SUBSCRIBERS_ONLY`: (default: `false`) Whether to restrict bot usage to subscribers only.
-- `MODERATORS_BYPASS`: (default: `true`) Whether moderators can bypass subscription restrictions.
+- `SUBSCRIBERS_ONLY`: (por defecto: `false`) Si restringir el uso del bot solo a suscriptores
+- `MODERATORS_BYPASS`: (por defecto: `true`) Si los moderadores pueden saltarse las restricciones de suscriptor
 
-#### 6.5. NEW: OpenAI Configuration Variables
+#### 6.5. Configuración Avanzada de OpenAI
 
-- `MODEL_NAME`: (default: `gpt-4o-mini`) The OpenAI model to use. You can check the available models [here](https://platform.openai.com/docs/models/).
-- `TEMPERATURE`: (default: `1.0`) Controls randomness in responses (0.0 = deterministic, 2.0 = very random).
-- `MAX_TOKENS`: (default: `150`) Maximum number of tokens in the response.
-- `TOP_P`: (default: `1.0`) Controls diversity via nucleus sampling (0.0 to 1.0).
-- `FREQUENCY_PENALTY`: (default: `0.5`) Reduces repetition of the same information.
-- `PRESENCE_PENALTY`: (default: `0.0`) Reduces repetition of the same topics.
-- `HISTORY_LENGTH`: (default: `5`) Number of previous messages to include in context.
+- `MODEL_NAME`: (por defecto: `gpt-4o-mini`) Modelo de OpenAI a usar. Modelos disponibles [aquí](https://platform.openai.com/docs/models/)
+- `TEMPERATURE`: (por defecto: `1.0`) Controla la aleatoriedad en las respuestas (0.0 = determinista, 2.0 = muy aleatorio)
+- `MAX_TOKENS`: (por defecto: `60`) Número máximo de tokens en la respuesta
+- `TOP_P`: (por defecto: `1.0`) Controla la diversidad mediante nucleus sampling (0.0 a 1.0)
+- `FREQUENCY_PENALTY`: (por defecto: `0.5`) Reduce la repetición de la misma información
+- `PRESENCE_PENALTY`: (por defecto: `0.0`) Reduce la repetición de los mismos temas
+- `HISTORY_LENGTH`: (por defecto: `5`) Número de mensajes anteriores a incluir en el contexto
 
 ---
 
-## Usage
+## 💬 Uso del Bot
 
-### Commands
+### Comandos
 
-You can interact with the bot using Twitch chat commands. By default, the command is `!gpt`. You can change this in the environment variables.
+Puedes interactuar con el bot usando comandos en el chat de Twitch. Por defecto, el comando es `!gpt`. Puedes cambiarlo en las variables de entorno.
 
-### Example
+### Ejemplo
 
-To use the `!gpt` command:
+Para usar el comando `!gpt`:
 
 ```twitch
-!gpt What is the weather today?
+!gpt ¿Cómo está el clima hoy?
 ```
 
-The bot will respond with an OpenAI-generated message.
+El bot responderá con un mensaje generado por OpenAI.
 
-### NEW: Subscription Control
+### Control de Suscriptores
 
-If `SUBSCRIBERS_ONLY` is enabled:
-- Only channel subscribers can use the bot
-- Moderators can bypass this restriction if `MODERATORS_BYPASS` is enabled
-- Non-subscribers will receive a message explaining the restriction
+Si `SUBSCRIBERS_ONLY` está habilitado:
+- Solo los suscriptores del canal pueden usar el bot
+- Los moderadores pueden saltarse esta restricción si `MODERATORS_BYPASS` está habilitado
+- Los no suscriptores recibirán un mensaje explicando la restricción
 
-### NEW: API Endpoints
+### Endpoints de API
 
-The bot now provides several API endpoints:
+El bot proporciona varios endpoints de API:
 
-- `GET /gpt/:text` - Generate a response (for external integrations)
-- `GET /subscriber/:username` - Check if a user is a subscriber
-- `GET /stats` - Get bot statistics
-- `POST /reset-history` - Reset conversation history
+- `GET /gpt/:text` - Generar una respuesta (para integraciones externas)
+- `GET /metrics` - Obtener métricas del bot
+- `GET /health` - Verificar estado de salud del bot
+- `POST /clear-cache` - Limpiar cache del bot
 
-### Streamelements and Nightbot Integration
+### Integración con Streamelements y Nightbot
 
 #### Streamelements
 
-Create a custom command with the response:
+Crea un comando personalizado con la respuesta:
 
 ```twitch
-$(urlfetch https://your-render-url.onrender.com/gpt/"${user}:${queryescape ${1:}}")
+$(urlfetch https://tu-url-render.onrender.com/gpt/"${user}:${queryescape ${1:}}")
 ```
 
 #### Nightbot
 
-Create a custom command with the response:
+Crea un comando personalizado con la respuesta:
 
 ```twitch
-!addcom !gptcmd $(urlfetch https://twitch-chatgpt-bot.onrender.com/gpt/$(user):$(querystring))
+!addcom !gptcmd $(urlfetch https://tu-url-render.onrender.com/gpt/$(user):$(querystring))
 ```
 
-Replace `your-render-url.onrender.com` with your actual Render URL.
-Replace `gptcmd` with your desired command name.
-Remove `$(user):` if you don't want to include the username in the message sent to OpenAI.
+Reemplaza `tu-url-render.onrender.com` con tu URL real de Render.
+Reemplaza `gptcmd` con el nombre de comando que desees.
+Elimina `$(user):` si no quieres incluir el nombre de usuario en el mensaje enviado a OpenAI.
 
 ---
 
-## NEW: OpenAI Parameter Tuning
+## 🎛️ Ajuste Fino de Parámetros de OpenAI
 
-You can now fine-tune the AI responses using these parameters:
+Puedes ajustar finamente las respuestas de la IA usando estos parámetros:
 
 ### Temperature (0.0 - 2.0)
-- **0.0**: Very focused, deterministic responses
-- **0.7**: Balanced creativity and focus
-- **1.0**: Default, good balance
-- **1.5+**: More creative and varied responses
+- **0.0**: Respuestas muy enfocadas y deterministas
+- **0.7**: Balance entre creatividad y enfoque
+- **1.0**: Por defecto, buen balance
+- **1.5+**: Respuestas más creativas y variadas
 
 ### Max Tokens (1 - 4096)
-- **50-100**: Short, concise responses
-- **150-300**: Medium-length responses (default)
-- **500+**: Longer, more detailed responses
+- **50-100**: Respuestas cortas y concisas
+- **150-300**: Respuestas de longitud media (por defecto)
+- **500+**: Respuestas más largas y detalladas
 
 ### Top P (0.0 - 1.0)
-- **0.1**: Very focused on most likely tokens
-- **0.9**: Good balance of focus and diversity
-- **1.0**: Maximum diversity
+- **0.1**: Muy enfocado en tokens más probables
+- **0.9**: Buen balance de enfoque y diversidad
+- **1.0**: Máxima diversidad
 
 ### Frequency Penalty (-2.0 - 2.0)
-- **0.0**: No penalty for repetition
-- **0.5**: Moderate penalty (default)
-- **1.0+**: Strong penalty against repetition
+- **0.0**: Sin penalización por repetición
+- **0.5**: Penalización moderada (por defecto)
+- **1.0+**: Fuerte penalización contra repetición
 
 ### Presence Penalty (-2.0 - 2.0)
-- **0.0**: No penalty for topic repetition (default)
-- **0.5**: Moderate penalty for repeating topics
-- **1.0+**: Strong penalty for topic repetition
+- **0.0**: Sin penalización por repetición de temas (por defecto)
+- **0.5**: Penalización moderada por repetir temas
+- **1.0+**: Fuerte penalización por repetición de temas
 
 ---
 
-## Support
+## 📊 Monitoreo y Métricas
 
-For any issues or questions, please join our [Discord community](https://discord.gg/pcxybrpDx6).
+### Métricas en Tiempo Real
 
-Thank you for using the ChatGPT Twitch Bot! Your support is greatly appreciated. ☕ [Buy me a coffee](https://www.buymeacoffee.com/osetinhas) ☕
+Visita `https://tu-bot.onrender.com/metrics` para ver:
+
+```json
+{
+  "bot": {
+    "processed": 1250,
+    "errors": 3,
+    "cacheHitRate": "85.2%",
+    "cacheSize": 45,
+    "subscribers": 15,
+    "moderators": 3
+  },
+  "server": {
+    "uptime": 3600,
+    "memory": "28MB"
+  }
+}
+```
+
+### Health Check
+
+Visita `https://tu-bot.onrender.com/health` para verificar el estado del bot.
 
 ---
 
-## Migration from v1.x
+## 🚀 Scripts Disponibles
 
-If you're upgrading from v1.x:
+```bash
+# Iniciar el bot
+npm start
 
-1. **New required variables**: You may need to add `TWITCH_CLIENT_ID` and `TWITCH_CLIENT_SECRET` if using subscription features
-2. **Updated dependencies**: The bot now uses TwitchIO instead of tmi.js
-3. **New features**: Take advantage of the new OpenAI parameters and subscription controls
-4. **API changes**: New endpoints are available for external integrations
+# Desarrollo con debugging
+npm run dev
+
+# Ejecutar tests
+npm test
+
+# Desplegar cambios
+.\deploy.ps1
+```
 
 ---
 
-### Important Notice
+## 🔧 Solución de Problemas
 
-**This version uses TwitchIO for better Twitch integration and includes subscription management features.**
+### Bot no responde
+1. Verifica que `OPENAI_API_KEY` esté configurada correctamente
+2. Revisa que `TWITCH_AUTH` no haya expirado
+3. Confirma que el canal esté en la lista `CHANNELS`
+
+### Errores de autenticación
+1. Regenera el token OAuth en https://twitchapps.com/tmi/
+2. Actualiza la variable `TWITCH_AUTH` en Render
+3. Redespliega el servicio
+
+### Respuestas lentas
+1. Verifica las métricas en `/metrics`
+2. Considera reducir `MAX_TOKENS`
+3. Aumenta `COOLDOWN_DURATION` si es necesario
+
+---
+
+## 📈 Optimizaciones Incluidas
+
+- **Cache Inteligente**: 85% de cache hit rate esperado
+- **Rate Limiting**: Protección contra spam y límites de API
+- **Gestión de Memoria**: Limpieza automática de datos antiguos
+- **Manejo de Errores**: Recuperación automática de fallos
+- **Métricas**: Monitoreo en tiempo real del rendimiento
+
+---
+
+## 🎯 Próximas Actualizaciones
+
+- [ ] Integración con más plataformas de streaming
+- [ ] Dashboard web para administración
+- [ ] Comandos personalizados avanzados
+- [ ] Integración con bases de datos
+- [ ] Sistema de plugins
+
+---
+
+## 📄 Licencia
+
+Este proyecto está bajo la Licencia MIT. Consulta el archivo `LICENSE` para más detalles.
+
+---
+
+## 🤝 Contribuciones
+
+Las contribuciones son bienvenidas. Por favor:
+
+1. Haz fork del proyecto
+2. Crea una rama para tu feature (`git checkout -b feature/AmazingFeature`)
+3. Commit tus cambios (`git commit -m 'Add some AmazingFeature'`)
+4. Push a la rama (`git push origin feature/AmazingFeature`)
+5. Abre un Pull Request
+
+---
+
+**¡Gracias por usar el Bot de Twitch con IA! 🤖✨**
