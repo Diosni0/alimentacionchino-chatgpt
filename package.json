@@ -2,14 +2,11 @@
   "name": "Twitch Chat GPT",
   "version": "2.0.0",
   "description": "The Twitch Chat GPT is a bot that uses OpenAI's GPT-4 to generate messages based on the chat of a Twitch channel. It can be used to generate messages for a chatbot, or to generate, for example, a chatbot for a game.",
-  "main": "index.js",
+  "main": "server.js",
   "type": "module",
   "scripts": {
-    "start": "node index.js",
-    "start:optimized": "node index_optimized.js",
-    "start:ultra": "node index_ultra_optimized.js",
-    "dev": "node --inspect index_optimized.js",
-    "dev:ultra": "node --inspect index_ultra_optimized.js",
+    "start": "node server.js",
+    "dev": "node --inspect server.js",
     "test": "node --test"
   },
   "repository": {

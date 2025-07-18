@@ -245,6 +245,12 @@ export class UltraOptimizedTwitchBot {
             console.log(`Raw API response: "${rawContent}"`);
             console.log(`Response length: ${rawContent ? rawContent.length : 0}`);
 
+            // Check for empty response
+            if (!rawContent || rawContent.trim().length === 0) {
+                console.log('Empty response from API, using fallback');
+                return "Perdón cariño, me he quedado sin palabras por un momento. Inténtalo de nuevo.";
+            }
+
             // Circuit breaker success
             this.circuitBreaker.failures = 0;
             this.circuitBreaker.state = 'CLOSED';
