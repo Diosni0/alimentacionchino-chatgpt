@@ -23,7 +23,9 @@ export class TwitchBot {
         this.MAX_CACHE_SIZE = 50;
         
         // Chat history with circular buffer
-        this.chatHistory = [{ role: 'system', content: getFileContext() }];
+        const fileContext = getFileContext();
+        console.log('📄 Context loaded:', fileContext.substring(0, 100) + '...');
+        this.chatHistory = [{ role: 'system', content: fileContext }];
         this.MAX_HISTORY = OPENAI_CONFIG.HISTORY_LENGTH * 2 + 1;
         
         // Rate limiting
@@ -114,6 +116,14 @@ export class TwitchBot {
 
         const messages = [...this.chatHistory, { role: 'user', content: text }];
         const isReasoningModel = this.isReasoningModel(OPENAI_CONFIG.MODEL_NAME);
+        
+        // Debug: Log what we're sending to OpenAI
+        console.log('🔍 Sending to OpenAI:', {
+            model: OPENAI_CONFIG.MODEL_NAME,
+            systemMessage: messages[0].content.substring(0, 150) + '...',
+            userMessage: text,
+            historyLength: messages.length
+        });
         
         const config = {
             model: OPENAI_CONFIG.MODEL_NAME,
