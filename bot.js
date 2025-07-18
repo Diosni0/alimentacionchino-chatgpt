@@ -28,6 +28,12 @@ export class TwitchBot {
         this.chatHistory = [{ role: 'system', content: fileContext }];
         this.MAX_HISTORY = OPENAI_CONFIG.HISTORY_LENGTH * 2 + 1;
         
+        console.log('📊 History config:', {
+            HISTORY_LENGTH: OPENAI_CONFIG.HISTORY_LENGTH,
+            MAX_HISTORY: this.MAX_HISTORY,
+            formula: 'HISTORY_LENGTH * 2 + 1 (system message)'
+        });
+        
         // Rate limiting
         this.apiCalls = 0;
         this.resetTime = Date.now() + 60000;
