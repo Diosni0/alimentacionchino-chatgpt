@@ -69,9 +69,15 @@ export class TwitchBot {
         if (!command) return;
 
         try {
-            // Permission and cooldown checks
-            if (!this.hasPermission(userstate) || !this.checkCooldown(userstate.username)) {
+            // Permission check
+            if (!this.hasPermission(userstate)) {
+                await this.sendMessage(channel, `@${userstate.username} Lo siento, cariño, si quieres usarme, tendrás que suscribirte.`);
                 return;
+            }
+            
+            // Cooldown check
+            if (!this.checkCooldown(userstate.username)) {
+                return; // Fail silently for cooldown
             }
 
             const text = this.prepareText(message, command, userstate.username);
