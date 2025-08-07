@@ -208,7 +208,20 @@ export class TwitchBot {
     }
 
     isReasoningModel(model) {
-        return model.toLowerCase().startsWith('o1') || model.toLowerCase().startsWith('o4');
+        const modelLower = model.toLowerCase();
+        
+        // GPT-5 reasoning models and o1/o3 series
+        const reasoningModels = [
+            'gpt-5',
+            'gpt-5-mini', 
+            'gpt-5-nano',
+            'o1',
+            'o3',
+            'o4'
+        ];
+        
+        return reasoningModels.some(rm => modelLower.includes(rm)) && 
+               !modelLower.includes('chat-latest'); // Exclude chat variants
     }
 
     // Cache management
