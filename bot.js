@@ -144,8 +144,10 @@ export class TwitchBot {
 
         // Add model-specific parameters
         if (isReasoningModel) {
-            // Reasoning models need more tokens (they use some for internal reasoning)
-            config.max_completion_tokens = Math.max(300, OPENAI_CONFIG.MAX_TOKENS * 3);
+            // Reasoning models need MUCH more tokens (they use many for internal reasoning)
+            // GPT-5 can use 300+ tokens just for thinking, so we need room for actual response
+            config.max_completion_tokens = Math.max(800, OPENAI_CONFIG.MAX_TOKENS * 10);
+            console.log(`🧠 Using ${config.max_completion_tokens} tokens for reasoning model`);
         } else {
             config.temperature = OPENAI_CONFIG.TEMPERATURE;
             config.max_tokens = OPENAI_CONFIG.MAX_TOKENS;
