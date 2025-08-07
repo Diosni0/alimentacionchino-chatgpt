@@ -154,12 +154,36 @@ export class TwitchBot {
         }
 
         const response = await this.openai.chat.completions.create(config);
-        const content = response.choices[0]?.message?.content?.trim();
+        
+        // Debug: Log the full response structure
+        console.log('🔍 OpenAI Response:', {
+            model: response.model,
+            choices: response.choices?.length,
+            firstChoice: response.choices?.[0] ? {
+                message: response.choices[0].message,
+                finishReason: response.choices[0].finish_reason
+            } : null
+        });
+        
+        // Try different ways to extract content
+        let content = null;
+        
+        if (response.choices?.[0]?.message?.content) {
+            content = response.choices[0].message.content.trim();
+        } else if (response.choices?.[0]?.text) {
+            // Some models might use 'text' instead of 'message.content'
+            content = response.choices[0].text.trim();
+        } else if (response.choices?.[0]?.delta?.content) {
+            // Streaming format
+            content = response.choices[0].delta.content.trim();
+        }
         
         if (!content) {
+            console.error('❌ Empty response from OpenAI:', JSON.stringify(response, null, 2));
             return "Perdón cariño, me he quedado sin palabras. Inténtalo de nuevo.";
         }
         
+        console.log('✅ Got response:', content.substring(0, 100) + '...');
         return this.truncateResponse(content);
     }
 
