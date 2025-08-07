@@ -12,8 +12,25 @@ export class OpenAIOperations {
 
     // Helper method to determine if model uses max_completion_tokens
     usesMaxCompletionTokens(model) {
-        // GPT-5 and newer models use max_completion_tokens
-        return model.includes('gpt-5') || model.includes('o1') || model.includes('o3');
+        // Most newer models use max_completion_tokens, only older ones use max_tokens
+        const modelLower = model.toLowerCase();
+        
+        // Models that still use max_tokens (older models)
+        const oldModels = [
+            'gpt-3.5-turbo',
+            'gpt-4-turbo',
+            'gpt-4-0613',
+            'gpt-4-0314',
+            'gpt-4-32k',
+            'text-davinci-003',
+            'text-davinci-002'
+        ];
+        
+        // Check if it's an old model that uses max_tokens
+        const isOldModel = oldModels.some(oldModel => modelLower.includes(oldModel));
+        
+        // If it's not an old model, assume it uses max_completion_tokens
+        return !isOldModel;
     }
 
     check_history_length() {
@@ -43,9 +60,12 @@ export class OpenAIOperations {
             };
 
             // Use correct token parameter based on model
+            console.log(`Using model: ${OPENAI_CONFIG.MODEL_NAME}`);
             if (this.usesMaxCompletionTokens(OPENAI_CONFIG.MODEL_NAME)) {
+                console.log('Using max_completion_tokens parameter');
                 params.max_completion_tokens = OPENAI_CONFIG.MAX_TOKENS;
             } else {
+                console.log('Using max_tokens parameter');
                 params.max_tokens = OPENAI_CONFIG.MAX_TOKENS;
             }
 
