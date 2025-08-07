@@ -14,7 +14,7 @@ export class OpenAIOperations {
     usesMaxCompletionTokens(model) {
         // Most newer models use max_completion_tokens, only older ones use max_tokens
         const modelLower = model.toLowerCase();
-        
+
         // Models that still use max_tokens (older models)
         const oldModels = [
             'gpt-3.5-turbo',
@@ -25,10 +25,10 @@ export class OpenAIOperations {
             'text-davinci-003',
             'text-davinci-002'
         ];
-        
+
         // Check if it's an old model that uses max_tokens
         const isOldModel = oldModels.some(oldModel => modelLower.includes(oldModel));
-        
+
         // If it's not an old model, assume it uses max_completion_tokens
         return !isOldModel;
     }
