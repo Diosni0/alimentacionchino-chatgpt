@@ -144,7 +144,8 @@ export class TwitchBot {
 
         // Add model-specific parameters
         if (isReasoningModel) {
-            config.max_completion_tokens = OPENAI_CONFIG.MAX_TOKENS;
+            // Reasoning models need more tokens (they use some for internal reasoning)
+            config.max_completion_tokens = Math.max(300, OPENAI_CONFIG.MAX_TOKENS * 3);
         } else {
             config.temperature = OPENAI_CONFIG.TEMPERATURE;
             config.max_tokens = OPENAI_CONFIG.MAX_TOKENS;
