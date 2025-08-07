@@ -59,15 +59,9 @@ export class OpenAIOperations {
                 presence_penalty: OPENAI_CONFIG.PRESENCE_PENALTY,
             };
 
-            // Use correct token parameter based on model
+            // For GPT-5 and newer models, use max_completion_tokens directly
             console.log(`Using model: ${OPENAI_CONFIG.MODEL_NAME}`);
-            if (this.usesMaxCompletionTokens(OPENAI_CONFIG.MODEL_NAME)) {
-                console.log('Using max_completion_tokens parameter');
-                params.max_completion_tokens = OPENAI_CONFIG.MAX_TOKENS;
-            } else {
-                console.log('Using max_tokens parameter');
-                params.max_tokens = OPENAI_CONFIG.MAX_TOKENS;
-            }
+            params.max_completion_tokens = 150; // Fixed value for GPT-5
 
             // Use await to get the response from openai with updated parameters
             const response = await this.openai.chat.completions.create(params);
@@ -101,12 +95,8 @@ export class OpenAIOperations {
                 presence_penalty: OPENAI_CONFIG.PRESENCE_PENALTY,
             };
 
-            // Use correct token parameter based on model
-            if (this.usesMaxCompletionTokens("gpt-4o-2024-08-06")) {
-                params.max_completion_tokens = OPENAI_CONFIG.MAX_TOKENS;
-            } else {
-                params.max_tokens = OPENAI_CONFIG.MAX_TOKENS;
-            }
+            // For GPT-5 and newer models, use max_completion_tokens directly
+            params.max_completion_tokens = 150; // Fixed value for GPT-5
 
             const response = await this.openai.completions.create(params);
 

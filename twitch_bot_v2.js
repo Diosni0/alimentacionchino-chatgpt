@@ -200,15 +200,9 @@ export class TwitchBotV2 {
                 stop: ["\n\n", "User:", "Human:", "Assistant:"]
             };
 
-            // Use correct token parameter based on model
+            // For GPT-5 and newer models, use max_completion_tokens directly
             console.log(`Using model: ${OPENAI_CONFIG.MODEL_NAME}`);
-            if (this.usesMaxCompletionTokens(OPENAI_CONFIG.MODEL_NAME)) {
-                console.log('Using max_completion_tokens parameter');
-                params.max_completion_tokens = OPENAI_CONFIG.MAX_TOKENS;
-            } else {
-                console.log('Using max_tokens parameter');
-                params.max_tokens = OPENAI_CONFIG.MAX_TOKENS;
-            }
+            params.max_completion_tokens = 150; // Fixed value for GPT-5
 
             const response = await this.openai.chat.completions.create(params);
 
