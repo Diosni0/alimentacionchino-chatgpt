@@ -10,27 +10,52 @@ export class OpenAIOperations {
         });
     }
 
-    // Helper method to determine if model uses max_completion_tokens
-    usesMaxCompletionTokens(model) {
-        // Most newer models use max_completion_tokens, only older ones use max_tokens
+    // Helper method to detect model type and configure parameters
+    getModelConfig(model) {
         const modelLower = model.toLowerCase();
-
-        // Models that still use max_tokens (older models)
-        const oldModels = [
+        
+        // GPT-5 reasoning models (like o1)
+        const reasoningModels = [
+            'gpt-5',
+            'gpt-5-mini',
+            'gpt-5-nano',
+            'o1',
+            'o1-mini',
+            'o1-preview',
+            'o3',
+            'o3-mini'
+        ];
+        
+        // GPT-5 chat models (non-reasoning)
+        const chatModels = [
+            'gpt-5-chat-latest',
+            'gpt-4o',
+            'gpt-4o-mini',
+            'gpt-4-turbo'
+        ];
+        
+        // Legacy models that use max_tokens
+        const legacyModels = [
             'gpt-3.5-turbo',
-            'gpt-4-turbo',
             'gpt-4-0613',
             'gpt-4-0314',
             'gpt-4-32k',
-            'text-davinci-003',
-            'text-davinci-002'
+            'text-davinci'
         ];
-
-        // Check if it's an old model that uses max_tokens
-        const isOldModel = oldModels.some(oldModel => modelLower.includes(oldModel));
-
-        // If it's not an old model, assume it uses max_completion_tokens
-        return !isOldModel;
+        
+        // Check model type
+        const isReasoning = reasoningModels.some(rm => modelLower.includes(rm));
+        const isChat = chatModels.some(cm => modelLower.includes(cm));
+        const isLegacy = legacyModels.some(lm => modelLower.includes(lm));
+        
+        return {
+            isReasoning,
+            isChat,
+            isLegacy,
+            useMaxCompletionTokens: isReasoning || isChat,
+            supportsTemperature: !isReasoning,
+            supportsAdvancedParams: !isReasoning
+        };
     }
 
     check_history_length() {
@@ -49,19 +74,36 @@ export class OpenAIOperations {
             //Check if message history is exceeded
             this.check_history_length();
 
-            // Prepare parameters with correct token parameter based on model
+            // Get model configuration
+            const modelConfig = this.getModelConfig(OPENAI_CONFIG.MODEL_NAME);
+            console.log(`Using model: ${OPENAI_CONFIG.MODEL_NAME}`);
+            console.log(`Model type: ${modelConfig.isReasoning ? 'Reasoning' : modelConfig.isChat ? 'Chat' : 'Legacy'}`);
+
+            // Base parameters
             const params = {
                 model: OPENAI_CONFIG.MODEL_NAME,
-                messages: this.messages,
-                temperature: OPENAI_CONFIG.TEMPERATURE,
-                top_p: OPENAI_CONFIG.TOP_P,
-                frequency_penalty: OPENAI_CONFIG.FREQUENCY_PENALTY,
-                presence_penalty: OPENAI_CONFIG.PRESENCE_PENALTY,
+                messages: this.messages
             };
 
-            // For GPT-5 and newer models, use max_completion_tokens directly
-            console.log(`Using model: ${OPENAI_CONFIG.MODEL_NAME}`);
-            params.max_completion_tokens = 150; // Fixed value for GPT-5
+            // Add token limit parameter
+            if (modelConfig.useMaxCompletionTokens) {
+                params.max_completion_tokens = 150;
+                console.log('Using max_completion_tokens parameter');
+            } else {
+                params.max_tokens = 150;
+                console.log('Using max_tokens parameter');
+            }
+
+            // Add advanced parameters only for non-reasoning models
+            if (modelConfig.supportsAdvancedParams) {
+                params.temperature = OPENAI_CONFIG.TEMPERATURE;
+                params.top_p = OPENAI_CONFIG.TOP_P;
+                params.frequency_penalty = OPENAI_CONFIG.FREQUENCY_PENALTY;
+                params.presence_penalty = OPENAI_CONFIG.PRESENCE_PENALTY;
+                console.log('Added advanced parameters (temperature, top_p, etc.)');
+            } else {
+                console.log('Skipped advanced parameters (reasoning model)');
+            }
 
             // Use await to get the response from openai with updated parameters
             const response = await this.openai.chat.completions.create(params);
@@ -85,18 +127,37 @@ export class OpenAIOperations {
 
     async make_openai_call_completion(text) {
         try {
-            // Prepare parameters with correct token parameter based on model
+            // Get model configuration for the completion model
+            const completionModel = "gpt-4o-2024-08-06";
+            const modelConfig = this.getModelConfig(completionModel);
+            console.log(`Using completion model: ${completionModel}`);
+            console.log(`Model type: ${modelConfig.isReasoning ? 'Reasoning' : modelConfig.isChat ? 'Chat' : 'Legacy'}`);
+
+            // Base parameters
             const params = {
-                model: "gpt-4o-2024-08-06",
-                prompt: text,
-                temperature: OPENAI_CONFIG.TEMPERATURE,
-                top_p: OPENAI_CONFIG.TOP_P,
-                frequency_penalty: OPENAI_CONFIG.FREQUENCY_PENALTY,
-                presence_penalty: OPENAI_CONFIG.PRESENCE_PENALTY,
+                model: completionModel,
+                prompt: text
             };
 
-            // For GPT-5 and newer models, use max_completion_tokens directly
-            params.max_completion_tokens = 150; // Fixed value for GPT-5
+            // Add token limit parameter
+            if (modelConfig.useMaxCompletionTokens) {
+                params.max_completion_tokens = 150;
+                console.log('Using max_completion_tokens parameter');
+            } else {
+                params.max_tokens = 150;
+                console.log('Using max_tokens parameter');
+            }
+
+            // Add advanced parameters only for non-reasoning models
+            if (modelConfig.supportsAdvancedParams) {
+                params.temperature = OPENAI_CONFIG.TEMPERATURE;
+                params.top_p = OPENAI_CONFIG.TOP_P;
+                params.frequency_penalty = OPENAI_CONFIG.FREQUENCY_PENALTY;
+                params.presence_penalty = OPENAI_CONFIG.PRESENCE_PENALTY;
+                console.log('Added advanced parameters (temperature, top_p, etc.)');
+            } else {
+                console.log('Skipped advanced parameters (reasoning model)');
+            }
 
             const response = await this.openai.completions.create(params);
 
