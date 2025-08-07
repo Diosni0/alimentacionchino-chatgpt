@@ -16,6 +16,29 @@ export class TwitchBotV2 {
         this.chatHistory = [{ role: 'system', content: this.fileContext }];
     }
 
+    // Helper method to determine if model uses max_completion_tokens
+    usesMaxCompletionTokens(model) {
+        // Most newer models use max_completion_tokens, only older ones use max_tokens
+        const modelLower = model.toLowerCase();
+        
+        // Models that still use max_tokens (older models)
+        const oldModels = [
+            'gpt-3.5-turbo',
+            'gpt-4-turbo',
+            'gpt-4-0613',
+            'gpt-4-0314',
+            'gpt-4-32k',
+            'text-davinci-003',
+            'text-davinci-002'
+        ];
+        
+        // Check if it's an old model that uses max_tokens
+        const isOldModel = oldModels.some(oldModel => modelLower.includes(oldModel));
+        
+        // If it's not an old model, assume it uses max_completion_tokens
+        return !isOldModel;
+    }
+
     async initialize() {
         try {
             // Create TMI client
@@ -166,16 +189,28 @@ export class TwitchBotV2 {
 
     async generateResponseWithHistory() {
         try {
-            const response = await this.openai.chat.completions.create({
+            // Prepare parameters with correct token parameter based on model
+            const params = {
                 model: OPENAI_CONFIG.MODEL_NAME,
                 messages: this.chatHistory,
                 temperature: OPENAI_CONFIG.TEMPERATURE,
-                max_tokens: OPENAI_CONFIG.MAX_TOKENS,
                 top_p: OPENAI_CONFIG.TOP_P,
                 frequency_penalty: OPENAI_CONFIG.FREQUENCY_PENALTY,
                 presence_penalty: OPENAI_CONFIG.PRESENCE_PENALTY,
                 stop: ["\n\n", "User:", "Human:", "Assistant:"]
-            });
+            };
+
+            // Use correct token parameter based on model
+            console.log(`Using model: ${OPENAI_CONFIG.MODEL_NAME}`);
+            if (this.usesMaxCompletionTokens(OPENAI_CONFIG.MODEL_NAME)) {
+                console.log('Using max_completion_tokens parameter');
+                params.max_completion_tokens = OPENAI_CONFIG.MAX_TOKENS;
+            } else {
+                console.log('Using max_tokens parameter');
+                params.max_tokens = OPENAI_CONFIG.MAX_TOKENS;
+            }
+
+            const response = await this.openai.chat.completions.create(params);
 
             let responseText = response.choices[0].message.content;
             // Limpiar espacios extra
