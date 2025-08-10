@@ -40,9 +40,9 @@ MODERATORS_BYPASS=true
 MODEL_NAME=gpt-5
 TEMPERATURE=1.0
 # Puedes usar cualquiera de estas dos (son equivalentes en el código):
-MAX_TOKENS=120
+MAX_TOKENS=200
 # o
-MAX_COMPLETION_TOKENS=120
+MAX_COMPLETION_TOKENS=200
 TOP_P=1.0
 FREQUENCY_PENALTY=0.5
 PRESENCE_PENALTY=0.0
@@ -80,7 +80,7 @@ MODERATORS_BYPASS=true
 MODEL_NAME=gpt-5
 TEMPERATURE=1.0
 # Usa MAX_TOKENS o MAX_COMPLETION_TOKENS
-MAX_TOKENS=120
+MAX_TOKENS=200
 TOP_P=1.0
 FREQUENCY_PENALTY=0.5
 PRESENCE_PENALTY=0.0
@@ -107,7 +107,7 @@ Si ya tienes variables configuradas:
 
 ### Variables que puedes actualizar:
 - `MODEL_NAME`: Cambia de `gpt-3.5-turbo` o `gpt-4o-mini` a `gpt-5`
-- `MAX_TOKENS`/`MAX_COMPLETION_TOKENS`: Ajusta a `120` para balance entre calidad y límite de Twitch
+- `MAX_TOKENS`/`MAX_COMPLETION_TOKENS`: Ajusta a `200` para reducir vacíos por `length`
 
 ### Variables nuevas que puedes agregar:
 - `TEMPERATURE=1.0`

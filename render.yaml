@@ -18,7 +18,7 @@ services:
       - key: MODEL_NAME
         value: "gpt-5"
       - key: MAX_TOKENS
-        value: "120"
+        value: "200"
       - key: COMMAND_NAME
         value: "!gpt"
       - key: TWITCH_USER  # https://dev.twitch.tv/console

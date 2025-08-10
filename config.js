@@ -15,7 +15,7 @@ export const OPENAI_CONFIG = {
             || process.env.MAX_COMPLETION_TOKENS 
             || process.env.max_completion_tokens;
         const parsed = parseInt(raw ?? '', 10);
-        return Number.isFinite(parsed) ? parsed : 120;
+        return Number.isFinite(parsed) ? parsed : 200;
     })(),
     TOP_P: parseFloat(process.env.TOP_P) || 1.0,
     FREQUENCY_PENALTY: parseFloat(process.env.FREQUENCY_PENALTY) || 0.5,
