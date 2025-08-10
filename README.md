@@ -100,9 +100,9 @@ Ve a la pestaña de variables/environment en tu despliegue de Render y configura
 
 #### 6.5. Configuración Avanzada de OpenAI
 
-- `MODEL_NAME`: (por defecto: `gpt-4o-mini`) Modelo de OpenAI a usar. Modelos disponibles [aquí](https://platform.openai.com/docs/models/)
+- `MODEL_NAME`: (por defecto: `gpt-5`) Modelo de OpenAI a usar. Modelos disponibles [aquí](https://platform.openai.com/docs/models/)
 - `TEMPERATURE`: (por defecto: `1.0`) Controla la aleatoriedad en las respuestas (0.0 = determinista, 2.0 = muy aleatorio)
-- `MAX_TOKENS`: (por defecto: `60`) Número máximo de tokens en la respuesta
+- `MAX_TOKENS`: (por defecto: `120`) Número máximo de tokens en la respuesta
 - `TOP_P`: (por defecto: `1.0`) Controla la diversidad mediante nucleus sampling (0.0 a 1.0)
 - `FREQUENCY_PENALTY`: (por defecto: `0.5`) Reduce la repetición de la misma información
 - `PRESENCE_PENALTY`: (por defecto: `0.0`) Reduce la repetición de los mismos temas

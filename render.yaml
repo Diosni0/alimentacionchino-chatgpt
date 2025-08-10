@@ -16,9 +16,11 @@ services:
       - key: HISTORY_LENGTH
         value: "3"
       - key: MODEL_NAME
-        value: "gpt-3.5-turbo"
+        value: "gpt-5"
+      - key: MAX_TOKENS
+        value: "120"
       - key: COMMAND_NAME
-        value: "chat"
+        value: "!gpt"
       - key: TWITCH_USER  # https://dev.twitch.tv/console
         value: "TU_NOMBRE_DE_BOT"
       - key: TWITCH_AUTH  # https://twitchapps.com/tmi/

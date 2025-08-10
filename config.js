@@ -7,9 +7,16 @@ dotenv.config();
 // OpenAI Configuration
 export const OPENAI_CONFIG = {
     API_KEY: process.env.OPENAI_API_KEY || '',
-    MODEL_NAME: process.env.MODEL_NAME || 'gpt-4o-mini',
+    MODEL_NAME: process.env.MODEL_NAME || 'gpt-5',
     TEMPERATURE: parseFloat(process.env.TEMPERATURE) || 1.0,
-    MAX_TOKENS: parseInt(process.env.MAX_TOKENS) || 60,
+    // Allow both MAX_TOKENS and MAX_COMPLETION_TOKENS (any case)
+    MAX_TOKENS: (() => {
+        const raw = process.env.MAX_TOKENS 
+            || process.env.MAX_COMPLETION_TOKENS 
+            || process.env.max_completion_tokens;
+        const parsed = parseInt(raw ?? '', 10);
+        return Number.isFinite(parsed) ? parsed : 120;
+    })(),
     TOP_P: parseFloat(process.env.TOP_P) || 1.0,
     FREQUENCY_PENALTY: parseFloat(process.env.FREQUENCY_PENALTY) || 0.5,
     PRESENCE_PENALTY: parseFloat(process.env.PRESENCE_PENALTY) || 0.0,

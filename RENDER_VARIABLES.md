@@ -37,9 +37,12 @@ MODERATORS_BYPASS=true
 
 ### Configuración de OpenAI (Nuevas en v2.0)
 ```
-MODEL_NAME=gpt-4o-mini
+MODEL_NAME=gpt-5
 TEMPERATURE=1.0
-MAX_TOKENS=150
+# Puedes usar cualquiera de estas dos (son equivalentes en el código):
+MAX_TOKENS=120
+# o
+MAX_COMPLETION_TOKENS=120
 TOP_P=1.0
 FREQUENCY_PENALTY=0.5
 PRESENCE_PENALTY=0.0
@@ -74,9 +77,10 @@ COOLDOWN_DURATION=10
 MAX_MESSAGE_LENGTH=399
 SUBSCRIBERS_ONLY=false
 MODERATORS_BYPASS=true
-MODEL_NAME=gpt-4o-mini
+MODEL_NAME=gpt-5
 TEMPERATURE=1.0
-MAX_TOKENS=150
+# Usa MAX_TOKENS o MAX_COMPLETION_TOKENS
+MAX_TOKENS=120
 TOP_P=1.0
 FREQUENCY_PENALTY=0.5
 PRESENCE_PENALTY=0.0
@@ -102,8 +106,8 @@ Si ya tienes variables configuradas:
 3. **Actualiza los valores** si es necesario
 
 ### Variables que puedes actualizar:
-- `MODEL_NAME`: Cambia de `gpt-3.5-turbo` a `gpt-4o-mini`
-- `MAX_TOKENS`: Cambia de `60` a `150`
+- `MODEL_NAME`: Cambia de `gpt-3.5-turbo` o `gpt-4o-mini` a `gpt-5`
+- `MAX_TOKENS`/`MAX_COMPLETION_TOKENS`: Ajusta a `120` para balance entre calidad y límite de Twitch
 
 ### Variables nuevas que puedes agregar:
 - `TEMPERATURE=1.0`

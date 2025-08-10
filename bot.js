@@ -1,7 +1,7 @@
 import tmi from 'tmi.js';
 import OpenAI from 'openai';
 import { promises as fsPromises } from 'fs';
-import { TWITCH_CONFIG, OPENAI_CONFIG, getFileContext } from './config.js';
+import { TWITCH_CONFIG, OPENAI_CONFIG, getFileContext, BOT_CONFIG } from './config.js';
 
 /**
  * Clean and elegant Twitch AI Bot
@@ -120,6 +120,16 @@ export class TwitchBot {
         return response;
     }
 
+    // Calculate a safe max tokens budget based on configured char limit
+    calculateMaxTokens() {
+        const charLimit = BOT_CONFIG.MAX_MESSAGE_LENGTH || 450;
+        // Approx conversion: ~4 chars per token for ES/EN average, add safety margin
+        const estimatedTokens = Math.ceil(charLimit / 4) + 10; // +10 buffer
+        const upperBound = OPENAI_CONFIG.MAX_TOKENS || 120;
+        const lowerBound = 40; // ensure not too short
+        return Math.max(lowerBound, Math.min(estimatedTokens, upperBound));
+    }
+
     async generateResponse(text) {
         // Rate limiting
         if (!this.checkRateLimit()) {
@@ -128,13 +138,15 @@ export class TwitchBot {
 
         const messages = [...this.chatHistory, { role: 'user', content: text }];
         const isReasoningModel = this.isReasoningModel(OPENAI_CONFIG.MODEL_NAME);
+        const maxTokens = this.calculateMaxTokens();
         
         // Debug: Log what we're sending to OpenAI
         console.log('🔍 Sending to OpenAI:', {
             model: OPENAI_CONFIG.MODEL_NAME,
             systemMessage: messages[0].content.substring(0, 150) + '...',
             userMessage: text,
-            historyLength: messages.length
+            historyLength: messages.length,
+            maxTokens
         });
         
         const config = {
@@ -144,10 +156,10 @@ export class TwitchBot {
 
         // Add model-specific parameters
         if (isReasoningModel) {
-            config.max_completion_tokens = OPENAI_CONFIG.MAX_TOKENS;
+            config.max_completion_tokens = maxTokens;
         } else {
             config.temperature = OPENAI_CONFIG.TEMPERATURE;
-            config.max_tokens = OPENAI_CONFIG.MAX_TOKENS;
+            config.max_tokens = maxTokens;
             config.top_p = OPENAI_CONFIG.TOP_P;
             config.frequency_penalty = OPENAI_CONFIG.FREQUENCY_PENALTY;
             config.presence_penalty = OPENAI_CONFIG.PRESENCE_PENALTY;
