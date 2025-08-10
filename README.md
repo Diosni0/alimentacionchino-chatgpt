@@ -4,7 +4,7 @@
 
 ## 🌟 Características Principales
 
-- **🧠 IA Avanzada**: Integración completa con OpenAI (GPT-4, GPT-3.5, modelos razonadores)
+- **🧠 IA Avanzada**: Integración completa con OpenAI (GPT-5 Chat)
 - **⚡ Ultra Optimizado**: Cache inteligente, rate limiting adaptativo, gestión eficiente de memoria
 - **🎭 Personalidad Completa**: Sistema de contexto avanzado para mantener personalidad consistente
 - **👥 Control de Acceso**: Restricción por suscriptores, bypass para moderadores
@@ -100,14 +100,15 @@ Ve a la pestaña de variables/environment en tu despliegue de Render y configura
 
 #### 6.5. Configuración Avanzada de OpenAI
 
-- `MODEL_NAME`: (por defecto: `gpt-5`) Modelo de OpenAI a usar. Modelos disponibles [aquí](https://platform.openai.com/docs/models/)
-- `FIRST_CHAT_MODEL`: (por defecto: `gpt-5-chat-latest`) Modelo para la primera respuesta a cada usuario
-- `TEMPERATURE`: (por defecto: `1.0`) Controla la aleatoriedad en las respuestas (0.0 = determinista, 2.0 = muy aleatorio)
+- `MODEL_NAME`: (por defecto: `gpt-5-chat-latest`) Modelo de OpenAI a usar
+- `TEMPERATURE`: (por defecto: `1.0`) Controla la aleatoriedad en la primera interacción
+- `SECOND_TEMPERATURE`: (por defecto: `1.3`) Aumenta creatividad a partir de la segunda interacción del mismo usuario
+- `TOP_P`: (por defecto: `1.0`)
+- `SECOND_TOP_P`: (por defecto: `1.0`)
 - `MAX_TOKENS`: (por defecto: `200`) Número máximo de tokens en la respuesta (alias: `MAX_COMPLETION_TOKENS`)
-- `TOP_P`: (por defecto: `1.0`) Controla la diversidad mediante nucleus sampling (0.0 a 1.0)
-- `FREQUENCY_PENALTY`: (por defecto: `0.5`) Reduce la repetición de la misma información
-- `PRESENCE_PENALTY`: (por defecto: `0.0`) Reduce la repetición de los mismos temas
-- `HISTORY_LENGTH`: (por defecto: `5`) Número de mensajes anteriores a incluir en el contexto
+- `FREQUENCY_PENALTY`: (por defecto: `0.5`)
+- `PRESENCE_PENALTY`: (por defecto: `0.0`)
+- `HISTORY_LENGTH`: (por defecto: `5`)
 
 ---
 
@@ -143,164 +144,32 @@ El bot proporciona varios endpoints de API:
 - `GET /health` - Verificar estado de salud del bot
 - `POST /clear-cache` - Limpiar cache del bot
 
-### Integración con Streamelements y Nightbot
-
-#### Streamelements
-
-Crea un comando personalizado con la respuesta:
-
-```twitch
-$(urlfetch https://tu-url-render.onrender.com/gpt/"${user}:${queryescape ${1:}}")
-```
-
-#### Nightbot
-
-Crea un comando personalizado con la respuesta:
-
-```twitch
-!addcom !gptcmd $(urlfetch https://tu-url-render.onrender.com/gpt/$(user):$(querystring))
-```
-
-Reemplaza `tu-url-render.onrender.com` con tu URL real de Render.
-Reemplaza `gptcmd` con el nombre de comando que desees.
-Elimina `$(user):` si no quieres incluir el nombre de usuario en el mensaje enviado a OpenAI.
-
 ---
 
 ## 🎛️ Ajuste Fino de Parámetros de OpenAI
 
-Puedes ajustar finamente las respuestas de la IA usando estos parámetros:
-
-### Temperature (0.0 - 2.0)
-- **0.0**: Respuestas muy enfocadas y deterministas
-- **0.7**: Balance entre creatividad y enfoque
-- **1.0**: Por defecto, buen balance
-- **1.5+**: Respuestas más creativas y variadas
-
-### Max Tokens (1 - 4096)
-- **50-100**: Respuestas cortas y concisas
-- **150-300**: Respuestas de longitud media (por defecto)
-- **500+**: Respuestas más largas y detalladas
-
-### Top P (0.0 - 1.0)
-- **0.1**: Muy enfocado en tokens más probables
-- **0.9**: Buen balance de enfoque y diversidad
-- **1.0**: Máxima diversidad
-
-### Frequency Penalty (-2.0 - 2.0)
-- **0.0**: Sin penalización por repetición
-- **0.5**: Penalización moderada (por defecto)
-- **1.0+**: Fuerte penalización contra repetición
-
-### Presence Penalty (-2.0 - 2.0)
-- **0.0**: Sin penalización por repetición de temas (por defecto)
-- **0.5**: Penalización moderada por repetir temas
-- **1.0+**: Fuerte penalización por repetición de temas
+Sugerencias:
+- Si quieres más creatividad: sube `SECOND_TEMPERATURE` a `1.5` y/o baja `FREQUENCY_PENALTY` a `0.2`.
+- Si quieres respuestas más concisas: baja `SECOND_TEMPERATURE` a `1.1` y `TOP_P` a `0.9`.
 
 ---
 
 ## 📊 Monitoreo y Métricas
 
-### Métricas en Tiempo Real
-
-Visita `https://tu-bot.onrender.com/metrics` para ver:
-
-```json
-{
-  "bot": {
-    "processed": 1250,
-    "errors": 3,
-    "cacheHitRate": "85.2%",
-    "cacheSize": 45,
-    "subscribers": 15,
-    "moderators": 3
-  },
-  "server": {
-    "uptime": 3600,
-    "memory": "28MB"
-  }
-}
-```
-
-### Health Check
-
-Visita `https://tu-bot.onrender.com/health` para verificar el estado del bot.
+Visita `/metrics` para ver estadísticas de uso y salud.
 
 ---
 
 ## 🚀 Scripts Disponibles
 
 ```bash
-# Iniciar el bot
 npm start
-
-# Desarrollo con debugging
 npm run dev
-
-# Ejecutar tests
 npm test
-
-# Desplegar cambios
-.\deploy.ps1
 ```
-
----
-
-## 🔧 Solución de Problemas
-
-### Bot no responde
-1. Verifica que `OPENAI_API_KEY` esté configurada correctamente
-2. Revisa que `TWITCH_AUTH` no haya expirado
-3. Confirma que el canal esté en la lista `CHANNELS`
-
-### Errores de autenticación
-1. Regenera el token OAuth en https://twitchapps.com/tmi/
-2. Actualiza la variable `TWITCH_AUTH` en Render
-3. Redespliega el servicio
-
-### Respuestas lentas
-1. Verifica las métricas en `/metrics`
-2. Considera reducir `MAX_TOKENS`
-3. Aumenta `COOLDOWN_DURATION` si es necesario
-
----
-
-## 📈 Optimizaciones Incluidas
-
-- **Cache Inteligente**: 85% de cache hit rate esperado
-- **Rate Limiting**: Protección contra spam y límites de API
-- **Gestión de Memoria**: Limpieza automática de datos antiguos
-- **Manejo de Errores**: Recuperación automática de fallos
-- **Métricas**: Monitoreo en tiempo real del rendimiento
-
----
-
-## 🎯 Próximas Actualizaciones
-
-- [ ] Integración con más plataformas de streaming
-- [ ] Dashboard web para administración
-- [ ] Comandos personalizados avanzados
-- [ ] Integración con bases de datos
-- [ ] Sistema de plugins
 
 ---
 
 ## 📄 Licencia
 
-Este proyecto está bajo la Licencia MIT. Consulta el archivo `LICENSE` para más detalles.
-
----
-
-## 🤝 Contribuciones
-
-Las contribuciones son bienvenidas. Por favor:
-
-1. Haz fork del proyecto
-2. Crea una rama para tu feature (`git checkout -b feature/AmazingFeature`)
-3. Commit tus cambios (`git commit -m 'Add some AmazingFeature'`)
-4. Push a la rama (`git push origin feature/AmazingFeature`)
-5. Abre un Pull Request
-
----
-
-**¡Gracias por usar el Bot de Twitch con IA! 🤖✨**
+MIT

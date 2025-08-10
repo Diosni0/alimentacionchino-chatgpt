@@ -7,9 +7,11 @@ dotenv.config();
 // OpenAI Configuration
 export const OPENAI_CONFIG = {
     API_KEY: process.env.OPENAI_API_KEY || '',
-    MODEL_NAME: process.env.MODEL_NAME || 'gpt-5',
+    MODEL_NAME: process.env.MODEL_NAME || 'gpt-5-chat-latest',
     FIRST_CHAT_MODEL: process.env.FIRST_CHAT_MODEL || 'gpt-5-chat-latest',
     TEMPERATURE: parseFloat(process.env.TEMPERATURE) || 1.0,
+    SECOND_TEMPERATURE: parseFloat(process.env.SECOND_TEMPERATURE) || 1.3,
+    SECOND_TOP_P: parseFloat(process.env.SECOND_TOP_P) || 1.0,
     // Allow both MAX_TOKENS and MAX_COMPLETION_TOKENS (any case)
     MAX_TOKENS: (() => {
         const raw = process.env.MAX_TOKENS 
