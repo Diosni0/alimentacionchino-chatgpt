@@ -16,6 +16,8 @@ export class TwitchBot {
         this.subscribers = new Set();
         this.moderators = new Set();
         this.userCooldowns = new Map();
+        // Track first interaction per user to choose model
+        this.firstInteractionSeen = new Set();
         
         // Intelligent caching
         this.cache = new Map();
@@ -98,7 +100,7 @@ export class TwitchBot {
             }
 
             const text = this.prepareText(message, command, userstate.username);
-            const response = await this.getResponse(text);
+            const response = await this.getResponse(text, userstate.username);
             
             await this.sendMessage(channel, `@${userstate.username} ${response}`);
             
@@ -113,7 +115,7 @@ export class TwitchBot {
         }
     }
 
-    async getResponse(text) {
+    async getResponse(text, username) {
         // Check cache first
         const cacheKey = text.toLowerCase().trim().substring(0, 50);
         const cached = this.getFromCache(cacheKey);
@@ -124,7 +126,7 @@ export class TwitchBot {
         }
 
         // Generate new response
-        const response = await this.generateResponse(text);
+        const response = await this.generateResponse(text, username);
         this.addToCache(cacheKey, response);
         this.updateHistory(text, response);
         
@@ -136,24 +138,34 @@ export class TwitchBot {
         const charLimit = BOT_CONFIG.MAX_MESSAGE_LENGTH || 450;
         // Approx conversion: ~4 chars per token for ES/EN average, add safety margin
         const estimatedTokens = Math.ceil(charLimit / 4) + 10; // +10 buffer
-        const upperBound = OPENAI_CONFIG.MAX_TOKENS || 120;
-        const lowerBound = 40; // ensure not too short
+        const upperBound = OPENAI_CONFIG.MAX_TOKENS || 200;
+        const lowerBound = 60; // a little higher to help first answers
         return Math.max(lowerBound, Math.min(estimatedTokens, upperBound));
     }
 
-    async generateResponse(text) {
+    // Decide model per user: first time -> FIRST_CHAT_MODEL; subsequent -> MODEL_NAME
+    pickModelForUser(username) {
+        if (!this.firstInteractionSeen.has(username)) {
+            this.firstInteractionSeen.add(username);
+            return OPENAI_CONFIG.FIRST_CHAT_MODEL || OPENAI_CONFIG.MODEL_NAME;
+        }
+        return OPENAI_CONFIG.MODEL_NAME;
+    }
+
+    async generateResponse(text, username) {
         // Rate limiting
         if (!this.checkRateLimit()) {
             throw new Error('Rate limit exceeded');
         }
 
         const messages = [...this.chatHistory, { role: 'user', content: text }];
-        const isReasoningModel = this.isReasoningModel(OPENAI_CONFIG.MODEL_NAME);
+        const selectedModel = this.pickModelForUser(username);
+        const isReasoningModel = this.isReasoningModel(selectedModel);
         const maxTokens = this.calculateMaxTokens();
         
         // Debug: Log what we're sending to OpenAI
         console.log('🔍 Sending to OpenAI:', {
-            model: OPENAI_CONFIG.MODEL_NAME,
+            model: selectedModel,
             systemMessage: messages[0].content.substring(0, 150) + '...',
             userMessage: text,
             historyLength: messages.length,
@@ -161,7 +173,7 @@ export class TwitchBot {
         });
         
         const config = {
-            model: OPENAI_CONFIG.MODEL_NAME,
+            model: selectedModel,
             messages
         };
 
@@ -184,7 +196,7 @@ export class TwitchBot {
         // If empty content due to length, retry with higher budget
         if ((!content || content.length === 0) && finish_reason === 'length') {
             console.log('⚠️ Empty response with finish_reason=length. Retrying with higher token budget...');
-            const boostedTokens = Math.min((OPENAI_CONFIG.MAX_TOKENS || maxTokens) * 2, 400);
+            const boostedTokens = Math.min((OPENAI_CONFIG.MAX_TOKENS || maxTokens) * 2, 500);
             const retryConfig = { ...config };
             if (isReasoningModel) {
                 retryConfig.max_completion_tokens = boostedTokens;
@@ -202,7 +214,7 @@ export class TwitchBot {
                 model: 'gpt-4o-mini',
                 messages,
                 temperature: OPENAI_CONFIG.TEMPERATURE,
-                max_tokens: Math.min((OPENAI_CONFIG.MAX_TOKENS || maxTokens) * 2, 400),
+                max_tokens: Math.min((OPENAI_CONFIG.MAX_TOKENS || maxTokens) * 2, 500),
                 top_p: OPENAI_CONFIG.TOP_P,
                 frequency_penalty: OPENAI_CONFIG.FREQUENCY_PENALTY,
                 presence_penalty: OPENAI_CONFIG.PRESENCE_PENALTY

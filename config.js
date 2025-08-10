@@ -8,6 +8,7 @@ dotenv.config();
 export const OPENAI_CONFIG = {
     API_KEY: process.env.OPENAI_API_KEY || '',
     MODEL_NAME: process.env.MODEL_NAME || 'gpt-5',
+    FIRST_CHAT_MODEL: process.env.FIRST_CHAT_MODEL || 'gpt-5-chat-latest',
     TEMPERATURE: parseFloat(process.env.TEMPERATURE) || 1.0,
     // Allow both MAX_TOKENS and MAX_COMPLETION_TOKENS (any case)
     MAX_TOKENS: (() => {
