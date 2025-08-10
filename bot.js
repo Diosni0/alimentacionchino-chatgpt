@@ -44,7 +44,15 @@ export class TwitchBot {
 
     async initialize() {
         this.client = new tmi.client({
-            connection: { reconnect: true, secure: true },
+            connection: {
+                reconnect: true,
+                secure: true,
+                timeout: 180000,
+                reconnectDecay: 1.5,
+                reconnectInterval: 1000,
+                maxReconnectAttempts: Infinity,
+                maxReconnectInARow: 5
+            },
             identity: {
                 username: TWITCH_CONFIG.USERNAME,
                 password: TWITCH_CONFIG.OAUTH_TOKEN
@@ -65,6 +73,9 @@ export class TwitchBot {
         this.client.on('resub', (_, username) => this.subscribers.add(username));
         this.client.on('mod', (_, username) => this.moderators.add(username));
         this.client.on('unmod', (_, username) => this.moderators.delete(username));
+        // Connection diagnostics
+        this.client.on('connected', (addr, port) => console.log(`TMI connected: ${addr}:${port}`));
+        this.client.on('disconnected', (reason) => console.log(`TMI disconnected: ${reason}`));
     }
 
     async handleMessage(channel, userstate, message, self) {
