@@ -176,29 +176,39 @@ export class TwitchBot {
             config.presence_penalty = OPENAI_CONFIG.PRESENCE_PENALTY;
         }
 
-        const response = await this.openai.chat.completions.create(config);
-        
-        // Debug: Log the full response structure
-        console.log('🔍 OpenAI Response:', {
-            model: response.model,
-            choices: response.choices?.length,
-            firstChoice: response.choices?.[0] ? {
-                message: response.choices[0].message,
-                finishReason: response.choices[0].finish_reason
-            } : null
-        });
-        
-        // Try different ways to extract content
-        let content = null;
-        
-        if (response.choices?.[0]?.message?.content) {
-            content = response.choices[0].message.content.trim();
-        } else if (response.choices?.[0]?.text) {
-            // Some models might use 'text' instead of 'message.content'
-            content = response.choices[0].text.trim();
-        } else if (response.choices?.[0]?.delta?.content) {
-            // Streaming format
-            content = response.choices[0].delta.content.trim();
+        let response = await this.openai.chat.completions.create(config);
+
+        // Try to extract content
+        let { content, finish_reason } = this.extractChoice(response);
+
+        // If empty content due to length, retry with higher budget
+        if ((!content || content.length === 0) && finish_reason === 'length') {
+            console.log('⚠️ Empty response with finish_reason=length. Retrying with higher token budget...');
+            const boostedTokens = Math.min((OPENAI_CONFIG.MAX_TOKENS || maxTokens) * 2, 400);
+            const retryConfig = { ...config };
+            if (isReasoningModel) {
+                retryConfig.max_completion_tokens = boostedTokens;
+            } else {
+                retryConfig.max_tokens = boostedTokens;
+            }
+            response = await this.openai.chat.completions.create(retryConfig);
+            ({ content, finish_reason } = this.extractChoice(response));
+        }
+
+        // If still empty, fallback to a chat model
+        if (!content || content.length === 0) {
+            console.log('⚠️ Still empty after retry. Falling back to chat model gpt-4o-mini');
+            const fallbackConfig = {
+                model: 'gpt-4o-mini',
+                messages,
+                temperature: OPENAI_CONFIG.TEMPERATURE,
+                max_tokens: Math.min((OPENAI_CONFIG.MAX_TOKENS || maxTokens) * 2, 400),
+                top_p: OPENAI_CONFIG.TOP_P,
+                frequency_penalty: OPENAI_CONFIG.FREQUENCY_PENALTY,
+                presence_penalty: OPENAI_CONFIG.PRESENCE_PENALTY
+            };
+            response = await this.openai.chat.completions.create(fallbackConfig);
+            ({ content } = this.extractChoice(response));
         }
         
         if (!content) {
@@ -208,6 +218,20 @@ export class TwitchBot {
         
         console.log('✅ Got response:', content.substring(0, 100) + '...');
         return this.truncateResponse(content);
+    }
+
+    extractChoice(apiResponse) {
+        const choice = apiResponse?.choices?.[0] || {};
+        const finish_reason = choice.finish_reason || choice.finishReason;
+        let content = null;
+        if (choice?.message?.content) {
+            content = choice.message.content.trim();
+        } else if (choice?.text) {
+            content = choice.text.trim();
+        } else if (choice?.delta?.content) {
+            content = choice.delta.content.trim();
+        }
+        return { content, finish_reason };
     }
 
     // Utility methods
