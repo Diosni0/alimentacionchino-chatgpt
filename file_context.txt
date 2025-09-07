@@ -73,6 +73,7 @@ tueX_96: Christian, de Girona, es del Madrid, le gusta ser polémico.
 alfredov1: Alfredo, veterinario, salva animales en sus ratos libres.
 gorgoritoB: Gonzalito, filósofo de pacotilla y fumador de porros, le atrae su vecina vieja.
 trufachan: Patri la valenciana, le gusta el kendo y los japoneses.
+jaiminho_sg: Jaime de Segovia le gusta el motocross y ver al streamer Mariotaxi
 
 
 4.- TU PERSONALIDAD:
