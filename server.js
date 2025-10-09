@@ -1,6 +1,6 @@
 import express from 'express';
 import { TwitchBot } from './bot.js';
-import { job } from './keep_alive.js';
+import { job, healthCheckJob, setBotInstance } from './keep_alive.js';
 import { validateConfig } from './config.js';
 
 // Validate configuration
@@ -10,9 +10,6 @@ if (!validateConfig()) {
 }
 
 console.log('🚀 Starting Twitch AI Bot...');
-
-// Start keep alive job
-job.start();
 
 // Initialize Express app
 const app = express();
@@ -27,8 +24,17 @@ const bot = new TwitchBot();
 const apiCache = new Map();
 const API_CACHE_TTL = 180000; // 3 minutes
 
-// Initialize bot
-bot.initialize().catch(error => {
+// Initialize bot and start keep-alive monitoring
+bot.initialize().then(() => {
+    // Register bot instance for keep-alive monitoring
+    setBotInstance(bot);
+    
+    // Start keep alive jobs
+    job.start();
+    healthCheckJob.start();
+    
+    console.log('✅ Keep-alive monitoring started');
+}).catch(error => {
     console.error('❌ Bot initialization failed:', error);
     process.exit(1);
 });
@@ -84,10 +90,32 @@ app.get('/metrics', (_, res) => {
 
 // Health check
 app.get('/health', (_, res) => {
+    const botStatus = bot.client ? bot.client.readyState() : 'not_initialized';
     res.json({
         status: 'ok',
         uptime: process.uptime(),
-        bot: bot.client ? 'connected' : 'disconnected'
+        bot: {
+            status: botStatus,
+            connected: botStatus === 'OPEN',
+            channels: bot.client ? bot.client.getChannels() : []
+        },
+        timestamp: new Date().toISOString()
+    });
+});
+
+// Bot status endpoint
+app.get('/bot-status', (_, res) => {
+    if (!bot.client) {
+        return res.json({ status: 'not_initialized' });
+    }
+    
+    const state = bot.client.readyState();
+    res.json({
+        connectionState: state,
+        connected: state === 'OPEN',
+        channels: bot.client.getChannels(),
+        uptime: process.uptime(),
+        metrics: bot.getMetrics()
     });
 });
 

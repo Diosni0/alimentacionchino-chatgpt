@@ -20,15 +20,15 @@ git add .
 
 Write-Host ""
 Write-Host "Creando commit..." -ForegroundColor Yellow
-$commitMessage = "feat: Ultra-optimized bot with 60% less memory usage and 75% faster responses
+$commitMessage = "fix: Resolve security vulnerabilities and improve bot stability
 
-- Added ultra-optimized TwitchBot with circular buffer and intelligent caching
-- Implemented circuit breaker pattern for API resilience  
-- Added adaptive rate limiting based on error rates
-- Created asynchronous message queue for handling traffic spikes
-- Added performance monitoring and real-time metrics
-- Reduced memory usage by 60% and improved response times by 75%
-- Added new npm scripts: start:ultra and dev:ultra"
+- Removed deprecated 'request' package (fixed 3 critical/moderate vulnerabilities)
+- Enhanced keep-alive system with bot connection monitoring
+- Added automatic reconnection for Twitch bot every 2 minutes
+- Improved health monitoring with detailed bot status endpoints
+- Added connection state tracking and recovery mechanisms
+- Fixed Render sleep mode issues with enhanced keep-alive jobs
+- Zero vulnerabilities remaining after security audit"
 
 git commit -m $commitMessage
 

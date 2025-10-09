@@ -50,10 +50,10 @@ export class TwitchBot {
                 reconnect: true,
                 secure: true,
                 timeout: 180000,
-                reconnectDecay: 1.5,
-                reconnectInterval: 1000,
+                reconnectDecay: 1.4,
+                reconnectInterval: 2000,
                 maxReconnectAttempts: Infinity,
-                maxReconnectInARow: 5
+                maxReconnectInARow: 10
             },
             identity: {
                 username: TWITCH_CONFIG.USERNAME,
@@ -65,8 +65,24 @@ export class TwitchBot {
         this.setupEvents();
         await this.client.connect();
         this.startCleanup();
+        this.startConnectionMonitor();
         
         console.log('🤖 Bot connected successfully!');
+    }
+
+    startConnectionMonitor() {
+        // Monitor connection every 2 minutes
+        setInterval(() => {
+            if (this.client) {
+                const state = this.client.readyState();
+                if (state !== 'OPEN') {
+                    console.log(`⚠️ Bot connection state: ${state}, attempting reconnection...`);
+                    this.client.connect().catch(err => {
+                        console.error('❌ Auto-reconnection failed:', err.message);
+                    });
+                }
+            }
+        }, 120000); // 2 minutes
     }
 
     setupEvents() {
