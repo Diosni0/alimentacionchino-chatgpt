@@ -162,15 +162,8 @@ export class TwitchBot {
     // Decide creativity per user: first time -> base params; subsequent -> higher temperature/top_p
     getSamplingParamsForUser(username) {
         const isFirst = !this.firstInteractionSeen.has(username);
-        // Para respuestas más ingeniosas, usar temperatura más alta desde el principio
-        if (isFirst) return { 
-            temperature: Math.min(OPENAI_CONFIG.TEMPERATURE + 0.1, 1.5), 
-            top_p: OPENAI_CONFIG.TOP_P 
-        };
-        return { 
-            temperature: Math.min(OPENAI_CONFIG.SECOND_TEMPERATURE + 0.1, 1.6), 
-            top_p: OPENAI_CONFIG.SECOND_TOP_P 
-        };
+        if (isFirst) return { temperature: OPENAI_CONFIG.TEMPERATURE, top_p: OPENAI_CONFIG.TOP_P };
+        return { temperature: OPENAI_CONFIG.SECOND_TEMPERATURE, top_p: OPENAI_CONFIG.SECOND_TOP_P };
     }
 
     async generateResponse(text, username) {

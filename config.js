@@ -9,21 +9,21 @@ export const OPENAI_CONFIG = {
     API_KEY: process.env.OPENAI_API_KEY || '',
     MODEL_NAME: process.env.MODEL_NAME || 'gpt-4o',
     FIRST_CHAT_MODEL: process.env.FIRST_CHAT_MODEL || 'gpt-4o',
-    TEMPERATURE: parseFloat(process.env.TEMPERATURE) || 1.2,
-    SECOND_TEMPERATURE: parseFloat(process.env.SECOND_TEMPERATURE) || 1.4,
-    SECOND_TOP_P: parseFloat(process.env.SECOND_TOP_P) || 0.95,
+    TEMPERATURE: parseFloat(process.env.TEMPERATURE) || 1.0,
+    SECOND_TEMPERATURE: parseFloat(process.env.SECOND_TEMPERATURE) || 1.3,
+    SECOND_TOP_P: parseFloat(process.env.SECOND_TOP_P) || 1.0,
     // Allow both MAX_TOKENS and MAX_COMPLETION_TOKENS (any case)
     MAX_TOKENS: (() => {
         const raw = process.env.MAX_TOKENS 
             || process.env.MAX_COMPLETION_TOKENS 
             || process.env.max_completion_tokens;
         const parsed = parseInt(raw ?? '', 10);
-        return Number.isFinite(parsed) ? parsed : 180;
+        return Number.isFinite(parsed) ? parsed : 200;
     })(),
-    TOP_P: parseFloat(process.env.TOP_P) || 0.95,
-    FREQUENCY_PENALTY: parseFloat(process.env.FREQUENCY_PENALTY) || 0.7,
-    PRESENCE_PENALTY: parseFloat(process.env.PRESENCE_PENALTY) || 0.3,
-    HISTORY_LENGTH: parseInt(process.env.HISTORY_LENGTH) || 6
+    TOP_P: parseFloat(process.env.TOP_P) || 1.0,
+    FREQUENCY_PENALTY: parseFloat(process.env.FREQUENCY_PENALTY) || 0.5,
+    PRESENCE_PENALTY: parseFloat(process.env.PRESENCE_PENALTY) || 0.0,
+    HISTORY_LENGTH: parseInt(process.env.HISTORY_LENGTH) || 5
 };
 
 // Twitch Configuration

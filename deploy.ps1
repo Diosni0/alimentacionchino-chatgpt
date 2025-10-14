@@ -20,15 +20,15 @@ git add .
 
 Write-Host ""
 Write-Host "Creando commit..." -ForegroundColor Yellow
-$commitMessage = "fix: Resolve security vulnerabilities and improve bot stability
+$commitMessage = "feat: Make bot more punzant and brutal with unlimited roasting permissions
 
-- Removed deprecated 'request' package (fixed 3 critical/moderate vulnerabilities)
-- Enhanced keep-alive system with bot connection monitoring
-- Added automatic reconnection for Twitch bot every 2 minutes
-- Improved health monitoring with detailed bot status endpoints
-- Added connection state tracking and recovery mechanisms
-- Fixed Render sleep mode issues with enhanced keep-alive jobs
-- Zero vulnerabilities remaining after security audit"
+- Reverted complex ingenio system to focus on direct brutal responses
+- Added unlimited permission to roast family, appearance, personal life
+- Simplified personality to be more aggressive and punzant
+- Removed ingenio examples file for cleaner direct approach
+- Enhanced vulgar and direct response capabilities
+- Bot now has full permission to be brutally honest and offensive
+- Focused on short, direct, and devastating responses"
 
 git commit -m $commitMessage
 
