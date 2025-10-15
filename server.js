@@ -56,7 +56,7 @@ app.get('/gpt/:text', async (req, res) => {
     }
     
     try {
-        const response = await bot.getResponse(text);
+        const response = await bot.getResponse(text, 'api-client');
         
         // Cache response
         if (apiCache.size >= 50) {

@@ -121,7 +121,7 @@ export class TwitchBot {
             await this.sendMessage(channel, `@${userstate.username} ${response}`);
             
             // Generate TTS asynchronously if enabled
-            if (process.env.ENABLE_TTS === 'true') {
+            if (BOT_CONFIG.ENABLE_TTS) {
                 this.generateTTS(response).catch(() => {});
             }
             
@@ -131,7 +131,7 @@ export class TwitchBot {
         }
     }
 
-    async getResponse(text, username) {
+    async getResponse(text, username = 'external') {
         // Check cache first
         const cacheKey = text.toLowerCase().trim().substring(0, 50);
         const cached = this.getFromCache(cacheKey);
@@ -159,11 +159,23 @@ export class TwitchBot {
         return Math.max(lowerBound, Math.min(estimatedTokens, upperBound));
     }
 
+    getUserKey(username) {
+        return (username || '__external__').toLowerCase();
+    }
+
+    getModelForInteraction(isFirstInteraction) {
+        const primaryModel = OPENAI_CONFIG.MODEL_NAME || OPENAI_CONFIG.FIRST_CHAT_MODEL;
+        const firstModel = OPENAI_CONFIG.FIRST_CHAT_MODEL || primaryModel;
+        return isFirstInteraction ? firstModel : primaryModel;
+    }
+
     // Decide creativity per user: first time -> base params; subsequent -> higher temperature/top_p
     getSamplingParamsForUser(username) {
-        const isFirst = !this.firstInteractionSeen.has(username);
-        if (isFirst) return { temperature: OPENAI_CONFIG.TEMPERATURE, top_p: OPENAI_CONFIG.TOP_P };
-        return { temperature: OPENAI_CONFIG.SECOND_TEMPERATURE, top_p: OPENAI_CONFIG.SECOND_TOP_P };
+        const key = this.getUserKey(username);
+        const isFirst = !this.firstInteractionSeen.has(key);
+        const temperature = isFirst ? OPENAI_CONFIG.TEMPERATURE : OPENAI_CONFIG.SECOND_TEMPERATURE;
+        const top_p = isFirst ? OPENAI_CONFIG.TOP_P : OPENAI_CONFIG.SECOND_TOP_P;
+        return { key, isFirst, temperature, top_p };
     }
 
     async generateResponse(text, username) {
@@ -174,28 +186,27 @@ export class TwitchBot {
 
         const messages = [...this.chatHistory, { role: 'user', content: text }];
         const maxTokens = this.calculateMaxTokens();
-        const { temperature, top_p } = this.getSamplingParamsForUser(username);
+        const sampling = this.getSamplingParamsForUser(username);
+        this.firstInteractionSeen.add(sampling.key);
+        const model = this.getModelForInteraction(sampling.isFirst);
 
-        // Mark first interaction seen after we decide params
-        this.firstInteractionSeen.add(username);
-        
         // Debug: Log what we're sending to OpenAI
-        console.log('🔍 Sending to OpenAI:', {
-            model: OPENAI_CONFIG.MODEL_NAME,
+        console.log('[bot] Sending to OpenAI:', {
+            model,
             systemMessage: messages[0].content.substring(0, 150) + '...',
             userMessage: text,
             historyLength: messages.length,
             maxTokens,
-            temperature,
-            top_p
+            temperature: sampling.temperature,
+            top_p: sampling.top_p
         });
-        
+
         const config = {
-            model: OPENAI_CONFIG.MODEL_NAME,
+            model,
             messages,
-            temperature,
+            temperature: sampling.temperature,
             max_tokens: maxTokens,
-            top_p,
+            top_p: sampling.top_p,
             frequency_penalty: OPENAI_CONFIG.FREQUENCY_PENALTY,
             presence_penalty: OPENAI_CONFIG.PRESENCE_PENALTY
         };
@@ -207,7 +218,7 @@ export class TwitchBot {
 
         // If empty content due to length, retry with higher budget
         if ((!content || content.length === 0) && finish_reason === 'length') {
-            console.log('⚠️ Empty response with finish_reason=length. Retrying with higher token budget...');
+            console.log('[bot] Empty response due to length. Retrying with higher token budget...');
             const boostedTokens = Math.min((OPENAI_CONFIG.MAX_TOKENS || maxTokens) * 2, 500);
             const retryConfig = { ...config, max_tokens: boostedTokens };
             response = await this.openai.chat.completions.create(retryConfig);
@@ -216,23 +227,23 @@ export class TwitchBot {
 
         // If still empty, fallback to a smaller temp/top_p to encourage concise output
         if (!content || content.length === 0) {
-            console.log('⚠️ Still empty after retry. Trying conservative sampling.');
+            console.log('[bot] Still empty after retry. Trying conservative sampling.');
             const fallbackConfig = {
                 ...config,
-                temperature: Math.max(0.7, OPENAI_CONFIG.TEMPERATURE),
-                top_p: Math.min(0.95, OPENAI_CONFIG.TOP_P),
+                temperature: Math.max(0.7, sampling.temperature),
+                top_p: Math.min(0.95, sampling.top_p),
                 max_tokens: Math.min((OPENAI_CONFIG.MAX_TOKENS || maxTokens) * 2, 500)
             };
             response = await this.openai.chat.completions.create(fallbackConfig);
             ({ content } = this.extractChoice(response));
         }
-        
+
         if (!content) {
-            console.error('❌ Empty response from OpenAI:', JSON.stringify(response, null, 2));
+            console.error('[bot] Empty response from OpenAI:', JSON.stringify(response, null, 2));
             return "Perdón cariño, me he quedado sin palabras. Inténtalo de nuevo.";
         }
-        
-        console.log('✅ Got response:', content.substring(0, 100) + '...');
+
+        console.log('[bot] Got response:', content.substring(0, 100) + '...');
         return this.truncateResponse(content);
     }
 
@@ -252,9 +263,8 @@ export class TwitchBot {
 
     // Utility methods
     getCommand(message) {
-        const commands = process.env.COMMAND_NAME?.split(',') || ['!gpt'];
         const lower = message.toLowerCase();
-        return commands.find(cmd => lower.startsWith(cmd.trim().toLowerCase()));
+        return BOT_CONFIG.COMMAND_NAME.find(cmd => lower.startsWith(cmd));
     }
 
     hasPermission(userstate) {
@@ -267,7 +277,7 @@ export class TwitchBot {
     }
 
     checkCooldown(username) {
-        const cooldown = parseInt(process.env.COOLDOWN_DURATION) || 10;
+        const cooldown = BOT_CONFIG.COOLDOWN_DURATION;
         const lastUse = this.userCooldowns.get(username) || 0;
         const now = Date.now();
         
@@ -288,7 +298,7 @@ export class TwitchBot {
 
     prepareText(message, command, username) {
         let text = message.slice(command.length).trim();
-        if (process.env.SEND_USERNAME === 'true') {
+        if (BOT_CONFIG.SEND_USERNAME && username) {
             text = `Message from user ${username}: ${text}`;
         }
         return text;
@@ -329,7 +339,7 @@ export class TwitchBot {
         }
     }
 
-    truncateResponse(text, maxLength = 450) {
+    truncateResponse(text, maxLength = BOT_CONFIG.MAX_MESSAGE_LENGTH || 450) {
         if (text.length <= maxLength) return text;
         
         const truncated = text.substring(0, maxLength - 3);
