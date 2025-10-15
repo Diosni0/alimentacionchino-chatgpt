@@ -88,20 +88,84 @@ app.get('/metrics', (_, res) => {
     });
 });
 
-// Health check
+// Enhanced Health check
 app.get('/health', (_, res) => {
     const botStatus = bot.client ? bot.client.readyState() : 'not_initialized';
-    res.json({
-        status: 'ok',
-        uptime: process.uptime(),
+    const uptime = process.uptime();
+    const memUsage = process.memoryUsage();
+    
+    const healthData = {
+        status: botStatus === 'OPEN' ? 'healthy' : 'unhealthy',
+        uptime: {
+            seconds: Math.floor(uptime),
+            human: formatUptime(uptime)
+        },
         bot: {
             status: botStatus,
             connected: botStatus === 'OPEN',
-            channels: bot.client ? bot.client.getChannels() : []
+            channels: bot.client ? bot.client.getChannels() : [],
+            metrics: bot.getMetrics()
         },
-        timestamp: new Date().toISOString()
+        system: {
+            memory: {
+                used: Math.round(memUsage.heapUsed / 1024 / 1024),
+                total: Math.round(memUsage.heapTotal / 1024 / 1024),
+                external: Math.round(memUsage.external / 1024 / 1024)
+            },
+            cache: {
+                api: apiCache.size,
+                bot: bot.cache.size
+            }
+        },
+        timestamp: new Date().toISOString(),
+        version: process.env.npm_package_version || '1.0.0'
+    };
+    
+    res.json(healthData);
+});
+
+// Health dashboard page
+app.get('/dashboard', (_, res) => {
+    res.render('pages/dashboard');
+});
+
+// API endpoint for real-time stats
+app.get('/api/stats', (_, res) => {
+    const botStatus = bot.client ? bot.client.readyState() : 'not_initialized';
+    const uptime = process.uptime();
+    const memUsage = process.memoryUsage();
+    
+    res.json({
+        bot: {
+            status: botStatus,
+            connected: botStatus === 'OPEN',
+            channels: bot.client ? bot.client.getChannels() : [],
+            metrics: bot.getMetrics()
+        },
+        system: {
+            uptime: Math.floor(uptime),
+            memory: Math.round(memUsage.heapUsed / 1024 / 1024),
+            cache: {
+                api: apiCache.size,
+                bot: bot.cache.size
+            }
+        },
+        timestamp: Date.now()
     });
 });
+
+// Helper function to format uptime
+function formatUptime(seconds) {
+    const days = Math.floor(seconds / 86400);
+    const hours = Math.floor((seconds % 86400) / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = Math.floor(seconds % 60);
+    
+    if (days > 0) return `${days}d ${hours}h ${minutes}m`;
+    if (hours > 0) return `${hours}h ${minutes}m ${secs}s`;
+    if (minutes > 0) return `${minutes}m ${secs}s`;
+    return `${secs}s`;
+}
 
 // Bot status endpoint
 app.get('/bot-status', (_, res) => {
