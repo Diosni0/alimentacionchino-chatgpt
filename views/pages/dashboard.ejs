@@ -334,13 +334,13 @@
 
                 // Activity (from bot metrics if available)
                 if (data.bot.metrics) {
-                    document.getElementById('total-messages').textContent = data.bot.metrics.totalMessages || 0;
-                    document.getElementById('responses-sent').textContent = `Respuestas enviadas: ${data.bot.metrics.responsesSent || 0}`;
-                    document.getElementById('avg-response-time').textContent = `Tiempo promedio: ${data.bot.metrics.avgResponseTime || 0}ms`;
+                    document.getElementById('total-messages').textContent = data.bot.metrics.processed || 0;
+                    document.getElementById('responses-sent').textContent = `Errores: ${data.bot.metrics.errors || 0}`;
+                    document.getElementById('avg-response-time').textContent = `Cache Hit Rate: ${data.bot.metrics.cacheHitRate || '0%'}`;
                 } else {
                     document.getElementById('total-messages').textContent = '0';
-                    document.getElementById('responses-sent').textContent = 'Respuestas enviadas: 0';
-                    document.getElementById('avg-response-time').textContent = 'Tiempo promedio: --ms';
+                    document.getElementById('responses-sent').textContent = 'Errores: 0';
+                    document.getElementById('avg-response-time').textContent = 'Cache Hit Rate: 0%';
                 }
 
                 // Last update
