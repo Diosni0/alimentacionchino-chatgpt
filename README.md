@@ -1,96 +1,175 @@
-# M-IA Khalifa V2 – Telegram Bot con OpenAI
+﻿# ­ƒñû Bot de Twitch con IA - Versi├│n Limpia y Elegante
 
-Bot de Telegram con personalidad agresiva, impulsado por OpenAI y diseñado para responder únicamente cuando se le menciona. Este proyecto es una versión nueva y limpia específica para Telegram, manteniendo el mismo “cerebro” (`bot_context.txt`) y el límite de respuesta corto del bot original de Twitch.
+**Bot de Twitch inteligente con integraci├│n de OpenAI, optimizado para rendimiento y simplicidad.**
 
-## Características
+## ­ƒîƒ Caracter├¡sticas Principales
 
-- Respuestas con OpenAI usando el modelo que definas (`gpt-4o-mini` por defecto).
-- Personalidad fija controlada por `bot_context.txt` (no lo borres, allí vive la mala leche del bot).
-- Responde solo a menciones `@TuBot` o a chats privados, respetando Privacy Mode.
-- Control de invitaciones: solo los IDs listados en `ADMIN_USERS` pueden añadirlo a grupos; si otro usuario lo invita, el bot se va insultando.
-- Historial corto por chat para mantener contexto sin memorias infinitas.
-- Cooldown por usuario para evitar spam.
-- Servidor Express con endpoints de salud y métricas listos para Render.
+- **­ƒºá IA Avanzada**: Integraci├│n completa con OpenAI (GPT-5 Chat)
+- **ÔÜí Ultra Optimizado**: Cache inteligente, rate limiting adaptativo, gesti├│n eficiente de memoria
+- **­ƒÄ¡ Personalidad Completa**: Sistema de contexto avanzado para mantener personalidad consistente
+- **­ƒæÑ Control de Acceso**: Restricci├│n por suscriptores, bypass para moderadores
+- **­ƒôè Monitoreo**: M├®tricas en tiempo real, health checks, logging estructurado
+- **­ƒöº F├ícil Configuraci├│n**: Setup simple con variables de entorno
+- **­ƒÜÇ Deploy Autom├ítico**: Listo para Render.com con configuraci├│n incluida
 
-## Requisitos
+## ­ƒÅù´©Å Arquitectura Limpia
 
-- Node.js 18.17 o superior.
-- Token de bot de Telegram (consigue uno con [@BotFather](https://t.me/BotFather)).
-- API Key de OpenAI.
-- Tu ID numérico de Telegram (usa `@userinfobot` u otro bot similar).
+Esta versi├│n ha sido completamente reestructurada para ser:
+- Ô£à **Simple**: Solo 6 archivos principales, sin duplicados
+- Ô£à **Elegante**: C├│digo limpio y bien organizado
+- Ô£à **Potente**: Mantiene todas las optimizaciones avanzadas
+- Ô£à **Mantenible**: F├ícil de entender y modificar
 
-## Variables de entorno
+## ­ƒôï Archivos Principales
 
-Crea un archivo `.env` basado en `env.example` (o rellena `.env.render` si vas directo a Render):
-
-```env
-TELEGRAM_BOT_TOKEN=tu_token_de_telegram
-OPENAI_API_KEY=tu_api_key_de_openai
-ADMIN_USERS=123456789            # IDs numéricos, separados por comas
-ALLOWED_GROUPS=                  # Opcional: IDs de grupos permitidos
-COOLDOWN_SECONDS=10              # Antispam
-MODEL_NAME=gpt-4o-mini
-TEMPERATURE=1.0
-TOP_P=1.0
-MAX_TOKENS=250
-FREQUENCY_PENALTY=0.0
-PRESENCE_PENALTY=0.0
-HISTORY_LENGTH=5
-MAX_MESSAGE_LENGTH=450           # Conserva el límite del bot original
-SEND_USERNAME=true
-PORT=3000                        # Usa 10000 en Render
-```
-
-> ⚠️ `ADMIN_USERS` es obligatorio: si está vacío, la app no arrancará. Solo esos IDs podrán invitar al bot a grupos.
-
-## Instalación local
-
-```bash
-npm install
-npm start
-```
-
-- El bot inicia polling contra Telegram.
-- El servidor HTTP escucha en `http://localhost:3000`.
-- Endpoints disponibles:
-  - `GET /` – información básica.
-  - `GET /health` – estado del servicio.
-  - `GET /metrics` – métricas simples (`processed`, `errors`, cache, etc.).
-
-## Despliegue en Render
-
-1. Sube el repo a GitHub y crea un **Web Service** en Render.
-2. Configura:
-   - `Build Command`: `npm install`
-  - `Start Command`: `npm start`
-3. Carga las variables de entorno descritas arriba (puedes subir el archivo `.env.render` desde el dashboard).
-4. Render asigna su propio puerto (normalmente 10000); el bot usa `PORT` para que Express escuche ese valor.
-5. Tras el deploy deberías ver en los logs:
-   ```
-   🤖 Bot ready as @TuBot
-   🌐 HTTP server listening on port 10000
-   🚀 Telegram bot started and polling for updates
-   ```
-
-## Uso en Telegram
-
-- Añade el bot al grupo desde una cuenta cuyo ID esté en `ADMIN_USERS`.
-- Escríbele mencionándolo: `@TuBot qué opinas de esto?`
-- También responde si le contestas directamente a un mensaje suyo o le hablas por privado.
-- Si alguien no autorizado lo invita, el bot se marcha automáticamente.
-
-## Personaliza la personalidad
-
-Edita `bot_context.txt` (mantén el tono corto y agresivo). Se carga una sola vez al arrancar; reinicia la app si cambias el contexto.
-
-## Desarrollo y contribución
-
-- Usa `npm run dev` con `node --watch` si necesitas recarga rápida (puedes ajustar el script en `package.json`).
-- Cualquier mejora debe respetar:
-  - Límite de respuesta (`MAX_MESSAGE_LENGTH = 450`).
-  - Uso del archivo de contexto.
-  - Protección de invitaciones mediante `ADMIN_USERS`.
+- **`bot.js`** - Bot principal con toda la l├│gica optimizada
+- **`server.js`** - Servidor Express con API REST
+- **`config.js`** - Configuraci├│n centralizada y validada
+- **`file_context.txt`** - Contexto y personalidad del bot
+- **`package.json`** - Dependencias y scripts
+- **`render.yaml`** - Configuraci├│n de despliegue
 
 ---
 
-Mantén tus tokens seguros y disfruta del caos con M-IA Khalifa V2. 💣
+## ­ƒÜÇ Instalaci├│n y Configuraci├│n
+
+### 1. Hacer Fork del Repositorio
+
+Inicia sesi├│n en GitHub y haz fork de este repositorio para obtener tu propia copia.
+
+### 2. Configurar el Contexto del Bot
+
+Abre `file_context.txt` y personaliza toda la informaci├│n de fondo para tu bot. Este contenido se incluir├í en cada solicitud a la IA.
+
+### 3. Crear Cuenta en OpenAI
+
+Crea una cuenta en [OpenAI](https://platform.openai.com) y configura l├¡mites de facturaci├│n si es necesario.
+
+### 4. Obtener API Key de OpenAI
+
+Genera una clave API en la [p├ígina de claves API](https://platform.openai.com/account/api-keys) y gu├írdala de forma segura.
+
+### 5. Desplegar en Render
+
+Render te permite ejecutar tu bot 24/7 de forma gratuita. Sigue estos pasos:
+
+#### 5.1. Desplegar en Render
+
+Haz clic en el bot├│n para desplegar:
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy)
+
+#### 5.2. Iniciar Sesi├│n con GitHub
+
+Inicia sesi├│n con tu cuenta de GitHub y selecciona tu repositorio forkeado para el despliegue.
+
+### 6. Configurar Variables de Entorno
+
+Ve a la pesta├▒a de variables/environment en tu despliegue de Render y configura las siguientes variables:
+
+#### 6.1. Variables Obligatorias
+
+- `OPENAI_API_KEY`: Tu clave API de OpenAI
+
+#### 6.2. Variables de Integraci├│n con Twitch
+
+- `TWITCH_USER`: Nombre de usuario del bot (ej: `MIAKhalifaV2Bot`)
+- `TWITCH_AUTH`: Token OAuth para tu bot de Twitch
+  - Ve a https://twitchapps.com/tmi/ y haz clic en "Connect with Twitch"
+  - Copia el token de la p├ígina y p├®galo en la variable TWITCH_AUTH
+  - ÔÜá´©Å **ESTE TOKEN PUEDE EXPIRAR DESPU├ëS DE UNOS D├ìAS** ÔÜá´©Å
+
+**Para funciones de suscriptores, tambi├®n necesitas:**
+- `TWITCH_CLIENT_ID`: ID de cliente de tu aplicaci├│n de Twitch
+- `TWITCH_CLIENT_SECRET`: Secreto de cliente de tu aplicaci├│n de Twitch
+  - Crea una nueva aplicaci├│n en https://dev.twitch.tv/console
+  - Obt├®n tu Client ID y Client Secret
+
+#### 6.3. Variables de Configuraci├│n del Bot
+
+- `CHANNELS`: Lista de canales de Twitch donde funcionar├í el bot (separados por comas)
+- `COMMAND_NAME`: (por defecto: `!gpt`) Comando que activa el bot. Puedes configurar m├║ltiples comandos separ├índolos con comas (ej: `!gpt,!ia,!mia`)
+- `SEND_USERNAME`: (por defecto: `true`) Si incluir el nombre de usuario en el mensaje enviado a OpenAI
+- `ENABLE_TTS`: (por defecto: `false`) Si habilitar Text-to-Speech
+- `COOLDOWN_DURATION`: (por defecto: `10`) Duraci├│n del cooldown en segundos entre respuestas
+
+#### 6.4. Control de Acceso por Suscriptores
+
+- `SUBSCRIBERS_ONLY`: (por defecto: `false`) Si restringir el uso del bot solo a suscriptores
+- `MODERATORS_BYPASS`: (por defecto: `true`) Si los moderadores pueden saltarse las restricciones de suscriptor
+
+#### 6.5. Configuraci├│n Avanzada de OpenAI
+
+- `MODEL_NAME`: (por defecto: `gpt-5-chat-latest`) Modelo de OpenAI a usar
+- `TEMPERATURE`: (por defecto: `1.0`) Controla la aleatoriedad en la primera interacci├│n
+- `SECOND_TEMPERATURE`: (por defecto: `1.3`) Aumenta creatividad a partir de la segunda interacci├│n del mismo usuario
+- `TOP_P`: (por defecto: `1.0`)
+- `SECOND_TOP_P`: (por defecto: `1.0`)
+- `MAX_TOKENS`: (por defecto: `200`) N├║mero m├íximo de tokens en la respuesta (alias: `MAX_COMPLETION_TOKENS`)
+- `FREQUENCY_PENALTY`: (por defecto: `0.5`)
+- `PRESENCE_PENALTY`: (por defecto: `0.0`)
+- `HISTORY_LENGTH`: (por defecto: `5`)
+
+---
+
+## ­ƒÆ¼ Uso del Bot
+
+### Comandos
+
+Puedes interactuar con el bot usando comandos en el chat de Twitch. Por defecto, el comando es `!gpt`. Puedes cambiarlo en las variables de entorno.
+
+### Ejemplo
+
+Para usar el comando `!gpt`:
+
+```twitch
+!gpt ┬┐C├│mo est├í el clima hoy?
+```
+
+El bot responder├í con un mensaje generado por OpenAI.
+
+### Control de Suscriptores
+
+Si `SUBSCRIBERS_ONLY` est├í habilitado:
+- Solo los suscriptores del canal pueden usar el bot
+- Los moderadores pueden saltarse esta restricci├│n si `MODERATORS_BYPASS` est├í habilitado
+- Los no suscriptores recibir├ín un mensaje explicando la restricci├│n
+
+### Endpoints de API
+
+El bot proporciona varios endpoints de API:
+
+- `GET /gpt/:text` - Generar una respuesta (para integraciones externas)
+- `GET /metrics` - Obtener m├®tricas del bot
+- `GET /health` - Verificar estado de salud del bot
+- `POST /clear-cache` - Limpiar cache del bot
+
+---
+
+## ­ƒÄø´©Å Ajuste Fino de Par├ímetros de OpenAI
+
+Sugerencias:
+- Si quieres m├ís creatividad: sube `SECOND_TEMPERATURE` a `1.5` y/o baja `FREQUENCY_PENALTY` a `0.2`.
+- Si quieres respuestas m├ís concisas: baja `SECOND_TEMPERATURE` a `1.1` y `TOP_P` a `0.9`.
+
+---
+
+## ­ƒôè Monitoreo y M├®tricas
+
+Visita `/metrics` para ver estad├¡sticas de uso y salud.
+
+---
+
+## ­ƒÜÇ Scripts Disponibles
+
+```bash
+npm start
+npm run dev
+npm test
+```
+
+---
+
+## ­ƒôä Licencia
+
+MIT

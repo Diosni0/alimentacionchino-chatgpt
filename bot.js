@@ -1,327 +1,419 @@
-import TelegramBot from 'node-telegram-bot-api';
+﻿import tmi from 'tmi.js';
 import OpenAI from 'openai';
-import { BOT_CONFIG, OPENAI_CONFIG, TELEGRAM_CONFIG, loadBotContext } from './config.js';
+import { promises as fsPromises } from 'fs';
+import { TWITCH_CONFIG, OPENAI_CONFIG, getFileContext, BOT_CONFIG } from './config.js';
 
-const MAX_CACHE_SIZE = 50;
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
-
-export class TelegramAIBot {
+/**
+ * Clean and elegant Twitch AI Bot
+ * Combines all optimizations in a single, maintainable class
+ */
+export class TwitchBot {
     constructor() {
-        this.bot = null;
-        this.botId = null;
-        this.botUsername = null;
-        this.botMention = null;
-
+        this.client = null;
         this.openai = new OpenAI({ apiKey: OPENAI_CONFIG.API_KEY });
-        this.context = loadBotContext();
-
-        this.chatHistories = new Map();
+        
+        // User management
+        this.subscribers = new Set();
+        this.moderators = new Set();
         this.userCooldowns = new Map();
-        this.responseCache = new Map();
-
-        this.metrics = {
-            processed: 0,
-            errors: 0,
-            cacheHits: 0,
-            lastResponseAt: null
-        };
+        // Track first interaction per user
+        this.firstInteractionSeen = new Set();
+        
+        // Intelligent caching
+        this.cache = new Map();
+        this.CACHE_TTL = 300000; // 5 minutes
+        this.MAX_CACHE_SIZE = 50;
+        
+        // Chat history with circular buffer
+        const fileContext = getFileContext();
+        console.log('­ƒôä Context loaded:', fileContext.substring(0, 100) + '...');
+        this.chatHistory = [{ role: 'system', content: fileContext }];
+        this.MAX_HISTORY = OPENAI_CONFIG.HISTORY_LENGTH * 2 + 1;
+        
+        console.log('­ƒôè History config:', {
+            HISTORY_LENGTH: OPENAI_CONFIG.HISTORY_LENGTH,
+            MAX_HISTORY: this.MAX_HISTORY,
+            formula: 'HISTORY_LENGTH * 2 + 1 (system message)'
+        });
+        
+        // Rate limiting
+        this.apiCalls = 0;
+        this.resetTime = Date.now() + 60000;
+        
+        // Simple metrics
+        this.metrics = { processed: 0, errors: 0, cacheHits: 0 };
     }
 
-    async start() {
-        this.bot = new TelegramBot(TELEGRAM_CONFIG.BOT_TOKEN, {
-            polling: true,
-            request: {
-                agentOptions: {
-                    keepAlive: true,
-                    family: 4
-                }
-            }
+    async initialize() {
+        this.client = new tmi.client({
+            connection: {
+                reconnect: true,
+                secure: true,
+                timeout: 180000,
+                reconnectDecay: 1.4,
+                reconnectInterval: 2000,
+                maxReconnectAttempts: Infinity,
+                maxReconnectInARow: 10
+            },
+            identity: {
+                username: TWITCH_CONFIG.USERNAME,
+                password: TWITCH_CONFIG.OAUTH_TOKEN
+            },
+            channels: TWITCH_CONFIG.CHANNELS
         });
 
-        const info = await this.bot.getMe();
-        this.botId = info.id;
-        this.botUsername = info.username ? info.username.toLowerCase() : null;
-        this.botMention = this.botUsername ? `@${this.botUsername}` : null;
-
-        console.log(`🤖 Bot ready as @${info.username} (${info.first_name})`);
-
-        this.bot.on('message', (msg) => this.handleMessage(msg));
-        this.bot.on('new_chat_members', (msg) => this.handleNewMembers(msg));
-        this.bot.on('polling_error', (error) => console.error('[bot] Polling error:', error.message));
-        this.bot.on('error', (error) => console.error('[bot] Client error:', error.message));
-
-        setInterval(() => this.cleanup(), 5 * 60 * 1000);
+        this.setupEvents();
+        await this.client.connect();
+        this.startCleanup();
+        this.startConnectionMonitor();
+        
+        console.log('­ƒñû Bot connected successfully!');
     }
 
-    async stop() {
-        if (!this.bot) return;
-        await this.bot.stopPolling();
-        console.log('🛑 Bot polling stopped');
+    startConnectionMonitor() {
+        // Monitor connection every 2 minutes
+        setInterval(() => {
+            if (this.client) {
+                const state = this.client.readyState();
+                if (state !== 'OPEN') {
+                    console.log(`ÔÜá´©Å Bot connection state: ${state}, attempting reconnection...`);
+                    this.client.connect().catch(err => {
+                        console.error('ÔØî Auto-reconnection failed:', err.message);
+                    });
+                }
+            }
+        }, 120000); // 2 minutes
     }
 
-    async handleNewMembers(msg) {
-        if (!msg.new_chat_members || msg.new_chat_members.length === 0) return;
-        const botEntry = msg.new_chat_members.find(member => member.id === this.botId);
+    setupEvents() {
+        this.client.on('message', this.handleMessage.bind(this));
+        this.client.on('subscription', (_, username) => this.subscribers.add(username));
+        this.client.on('resub', (_, username) => this.subscribers.add(username));
+        this.client.on('mod', (_, username) => this.moderators.add(username));
+        this.client.on('unmod', (_, username) => this.moderators.delete(username));
+        // Connection diagnostics
+        this.client.on('connected', (addr, port) => console.log(`TMI connected: ${addr}:${port}`));
+        this.client.on('disconnected', (reason) => console.log(`TMI disconnected: ${reason}`));
+    }
 
-        if (!botEntry) return;
-
-        const inviterId = msg.from?.id ? msg.from.id.toString() : null;
-        const allowed = TELEGRAM_CONFIG.ADMIN_USERS;
-
-        if (!inviterId || !allowed.includes(inviterId)) {
-            try {
-                await this.bot.sendMessage(msg.chat.id, 'Solo mi creador puede meterme en grupos. Me piro. 🤬');
-            } catch (error) {
-                console.error('[bot] Failed to send unauthorized message:', error.message);
-            }
-
-            try {
-                await this.bot.leaveChat(msg.chat.id);
-            } catch (error) {
-                console.error('[bot] Failed to leave chat:', error.message);
-            }
-            return;
-        }
-
-        const username = botEntry.username || this.botUsername || 'bot';
-        const greeting = [
-            '¡Hola putos! Soy M-IA Khalifa V2 🔥',
-            `Para hablar conmigo, menciónenme con @${username}`,
-            `Ejemplo: @${username} ¿cómo estás?`
-        ].join('\n');
+    async handleMessage(channel, userstate, message, self) {
+        if (self) return;
+        
+        this.metrics.processed++;
+        const command = this.getCommand(message);
+        if (!command) return;
 
         try {
-            await this.bot.sendMessage(msg.chat.id, greeting);
+            // Permission check
+            if (!this.hasPermission(userstate)) {
+                await this.sendMessage(channel, `@${userstate.username} Lo siento, cari├▒o, si quieres usarme, tendr├ís que suscribirte.`);
+                return;
+            }
+            
+            // Cooldown check
+            if (!this.checkCooldown(userstate.username)) {
+                return; // Fail silently for cooldown
+            }
+
+            const text = this.prepareText(message, command, userstate.username);
+            const response = await this.getResponse(text, userstate.username);
+            
+            await this.sendMessage(channel, `@${userstate.username} ${response}`);
+            
+            // Generate TTS asynchronously if enabled
+            if (BOT_CONFIG.ENABLE_TTS) {
+                this.generateTTS(response).catch(() => {});
+            }
+            
         } catch (error) {
-            console.error('[bot] Failed to send greeting:', error.message);
+            this.metrics.errors++;
+            console.error('Message handling error:', error.message);
         }
     }
 
-    async handleMessage(msg) {
-        if (!msg || msg.from?.is_bot) return;
-
-        this.metrics.processed += 1;
-
-        if (!this.shouldRespond(msg)) return;
-        if (!this.isAllowedChat(msg.chat?.id)) return;
-
-        const userId = msg.from.id.toString();
-        if (!this.checkCooldown(userId)) return;
-
-        const prepared = this.prepareUserText(msg);
-        const cacheKey = `${msg.chat.id}:${prepared}`;
-
-        try {
-            const cached = this.getFromCache(cacheKey);
-            let response;
-
-            if (cached) {
-                this.metrics.cacheHits += 1;
-                response = cached;
-            } else {
-                response = await this.generateResponse(prepared, msg.chat.id);
-                this.addToCache(cacheKey, response);
-            }
-
-            await this.bot.sendMessage(msg.chat.id, response, {
-                reply_to_message_id: msg.message_id,
-                parse_mode: 'HTML'
-            });
-
-            this.metrics.lastResponseAt = new Date().toISOString();
-        } catch (error) {
-            this.metrics.errors += 1;
-            console.error('[bot] Failed to process message:', error);
-            try {
-                await this.bot.sendMessage(msg.chat.id, 'Joder, me petaste. Intenta otra vez más tarde.', {
-                    reply_to_message_id: msg.message_id
-                });
-            } catch (sendError) {
-                console.error('[bot] Failed to send error message:', sendError.message);
-            }
-        }
-    }
-
-    shouldRespond(msg) {
-        if (!msg) return false;
-
-        const chatType = msg.chat?.type;
-        if (chatType === 'private') return true;
-
-        if (!this.botMention) return false;
-
-        if (msg.reply_to_message?.from?.id === this.botId) {
-            return true;
+    async getResponse(text, username = 'external') {
+        // Check cache first
+        const cacheKey = text.toLowerCase().trim().substring(0, 50);
+        const cached = this.getFromCache(cacheKey);
+        
+        if (cached) {
+            this.metrics.cacheHits++;
+            return cached;
         }
 
-        const entities = msg.entities || msg.caption_entities || [];
-        const text = (msg.text || msg.caption || '').toLowerCase();
+        // Generate new response
+        const response = await this.generateResponse(text, username);
+        this.addToCache(cacheKey, response);
+        this.updateHistory(text, response);
+        
+        return response;
+    }
 
-        for (const entity of entities) {
-            if (entity.type === 'mention') {
-                const mention = text.substring(entity.offset, entity.offset + entity.length);
-                if (mention === this.botMention) return true;
-            }
-            if (entity.type === 'text_mention' && entity.user?.id === this.botId) {
-                return true;
-            }
-            if (entity.type === 'bot_command') {
-                const command = text.substring(entity.offset, entity.offset + entity.length);
-                if (command.includes(this.botMention)) return true;
-            }
+    // Calculate a safe max tokens budget based on configured char limit
+    calculateMaxTokens() {
+        const charLimit = BOT_CONFIG.MAX_MESSAGE_LENGTH || 450;
+        // Approx conversion: ~4 chars per token for ES/EN average, add safety margin
+        const estimatedTokens = Math.ceil(charLimit / 4) + 10; // +10 buffer
+        const upperBound = OPENAI_CONFIG.MAX_TOKENS || 200;
+        const lowerBound = 60; // a little higher to help first answers
+        return Math.max(lowerBound, Math.min(estimatedTokens, upperBound));
+    }
+
+    getUserKey(username) {
+        return (username || '__external__').toLowerCase();
+    }
+
+    getModelForInteraction(isFirstInteraction) {
+        const primaryModel = OPENAI_CONFIG.MODEL_NAME || OPENAI_CONFIG.FIRST_CHAT_MODEL;
+        const firstModel = OPENAI_CONFIG.FIRST_CHAT_MODEL || primaryModel;
+        return isFirstInteraction ? firstModel : primaryModel;
+    }
+
+    // Decide creativity per user: first time -> base params; subsequent -> higher temperature/top_p
+    getSamplingParamsForUser(username) {
+        const key = this.getUserKey(username);
+        const isFirst = !this.firstInteractionSeen.has(key);
+        const temperature = isFirst ? OPENAI_CONFIG.TEMPERATURE : OPENAI_CONFIG.SECOND_TEMPERATURE;
+        const top_p = isFirst ? OPENAI_CONFIG.TOP_P : OPENAI_CONFIG.SECOND_TOP_P;
+        return { key, isFirst, temperature, top_p };
+    }
+
+    async generateResponse(text, username) {
+        // Rate limiting
+        if (!this.checkRateLimit()) {
+            throw new Error('Rate limit exceeded');
         }
 
-        return text.includes(this.botMention);
+        const messages = [...this.chatHistory, { role: 'user', content: text }];
+        const maxTokens = this.calculateMaxTokens();
+        const sampling = this.getSamplingParamsForUser(username);
+        this.firstInteractionSeen.add(sampling.key);
+        const model = this.getModelForInteraction(sampling.isFirst);
+
+        // Debug: Log what we're sending to OpenAI
+        console.log('[bot] Sending to OpenAI:', {
+            model,
+            systemMessage: messages[0].content.substring(0, 150) + '...',
+            userMessage: text,
+            historyLength: messages.length,
+            maxTokens,
+            temperature: sampling.temperature,
+            top_p: sampling.top_p
+        });
+
+        const config = {
+            model,
+            messages,
+            temperature: sampling.temperature,
+            max_tokens: maxTokens,
+            top_p: sampling.top_p,
+            frequency_penalty: OPENAI_CONFIG.FREQUENCY_PENALTY,
+            presence_penalty: OPENAI_CONFIG.PRESENCE_PENALTY
+        };
+
+        let response = await this.openai.chat.completions.create(config);
+
+        // Try to extract content
+        let { content, finish_reason } = this.extractChoice(response);
+
+        // If empty content due to length, retry with higher budget
+        if ((!content || content.length === 0) && finish_reason === 'length') {
+            console.log('[bot] Empty response due to length. Retrying with higher token budget...');
+            const boostedTokens = Math.min((OPENAI_CONFIG.MAX_TOKENS || maxTokens) * 2, 500);
+            const retryConfig = { ...config, max_tokens: boostedTokens };
+            response = await this.openai.chat.completions.create(retryConfig);
+            ({ content, finish_reason } = this.extractChoice(response));
+        }
+
+        // If still empty, fallback to a smaller temp/top_p to encourage concise output
+        if (!content || content.length === 0) {
+            console.log('[bot] Still empty after retry. Trying conservative sampling.');
+            const fallbackConfig = {
+                ...config,
+                temperature: Math.max(0.7, sampling.temperature),
+                top_p: Math.min(0.95, sampling.top_p),
+                max_tokens: Math.min((OPENAI_CONFIG.MAX_TOKENS || maxTokens) * 2, 500)
+            };
+            response = await this.openai.chat.completions.create(fallbackConfig);
+            ({ content } = this.extractChoice(response));
+        }
+
+        if (!content) {
+            console.error('[bot] Empty response from OpenAI:', JSON.stringify(response, null, 2));
+            return "Perd├│n cari├▒o, me he quedado sin palabras. Int├®ntalo de nuevo.";
+        }
+
+        console.log('[bot] Got response:', content.substring(0, 100) + '...');
+        return this.truncateResponse(content);
     }
 
-    isAllowedChat(chatId) {
-        if (!chatId) return false;
-        if (TELEGRAM_CONFIG.ALLOWED_GROUPS.length === 0) return true;
-        return TELEGRAM_CONFIG.ALLOWED_GROUPS.includes(chatId.toString());
+    extractChoice(apiResponse) {
+        const choice = apiResponse?.choices?.[0] || {};
+        const finish_reason = choice.finish_reason || choice.finishReason;
+        let content = null;
+        if (choice?.message?.content) {
+            content = choice.message.content.trim();
+        } else if (choice?.text) {
+            content = choice.text.trim();
+        } else if (choice?.delta?.content) {
+            content = choice.delta.content.trim();
+        }
+        return { content, finish_reason };
     }
 
-    checkCooldown(userId) {
+    // Utility methods
+    getCommand(message) {
+        const lower = message.toLowerCase();
+        return BOT_CONFIG.COMMAND_NAME.find(cmd => lower.startsWith(cmd));
+    }
+
+    hasPermission(userstate) {
+        if (!TWITCH_CONFIG.SUBSCRIBERS_ONLY) return true;
+        
+        return userstate.subscriber || 
+               this.subscribers.has(userstate.username) ||
+               (userstate.mod && TWITCH_CONFIG.MODERATORS_BYPASS) ||
+               this.moderators.has(userstate.username);
+    }
+
+    checkCooldown(username) {
+        const cooldown = BOT_CONFIG.COOLDOWN_DURATION;
+        const lastUse = this.userCooldowns.get(username) || 0;
         const now = Date.now();
-        const cooldownMs = TELEGRAM_CONFIG.COOLDOWN_SECONDS * 1000;
-        const last = this.userCooldowns.get(userId) || 0;
-
-        if (now - last < cooldownMs) {
-            return false;
-        }
-
-        this.userCooldowns.set(userId, now);
+        
+        if (now - lastUse < cooldown * 1000) return false;
+        
+        this.userCooldowns.set(username, now);
         return true;
     }
 
-    prepareUserText(msg) {
-        const text = (msg.text || msg.caption || '').trim();
-        let cleaned = text;
-
-        if (this.botMention) {
-            const mentionRegex = new RegExp(`^${this.botMention}\\s*`, 'i');
-            cleaned = cleaned.replace(mentionRegex, '');
+    checkRateLimit() {
+        const now = Date.now();
+        if (now > this.resetTime) {
+            this.apiCalls = 0;
+            this.resetTime = now + 60000;
         }
-
-        const username = msg.from?.username || msg.from?.first_name || 'anon';
-        if (BOT_CONFIG.SEND_USERNAME) {
-            return `Mensaje de ${username}: ${cleaned || 'Hola'}`;
-        }
-
-        return cleaned || 'Hola';
+        return this.apiCalls++ < 50;
     }
 
-    async generateResponse(userText, chatId) {
-        const history = this.getChatHistory(chatId);
-        const maxTokens = Math.min(
-            Math.ceil(BOT_CONFIG.MAX_MESSAGE_LENGTH / 4) + 20,
-            OPENAI_CONFIG.MAX_TOKENS
-        );
-
-        const messages = [
-            { role: 'system', content: this.context },
-            ...history,
-            { role: 'user', content: userText }
-        ];
-
-        console.log('[bot] Sending prompt to OpenAI', {
-            chatId,
-            history: history.length,
-            maxTokens
-        });
-
-        const response = await this.openai.chat.completions.create({
-            model: OPENAI_CONFIG.MODEL,
-            messages,
-            temperature: OPENAI_CONFIG.TEMPERATURE,
-            top_p: OPENAI_CONFIG.TOP_P,
-            max_tokens: maxTokens,
-            frequency_penalty: OPENAI_CONFIG.FREQUENCY_PENALTY,
-            presence_penalty: OPENAI_CONFIG.PRESENCE_PENALTY
-        });
-
-        const choice = response.choices?.[0];
-        const content = choice?.message?.content?.trim();
-
-        if (!content) {
-            throw new Error('OpenAI returned empty content');
+    prepareText(message, command, username) {
+        let text = message.slice(command.length).trim();
+        if (BOT_CONFIG.SEND_USERNAME && username) {
+            text = `Message from user ${username}: ${text}`;
         }
-
-        const trimmed = this.truncateResponse(content);
-        this.updateHistory(chatId, userText, trimmed);
-        return trimmed;
+        return text;
     }
 
-    getChatHistory(chatId) {
-        if (!this.chatHistories.has(chatId)) {
-            this.chatHistories.set(chatId, []);
-        }
-        return this.chatHistories.get(chatId);
+    isReasoningModel(model) {
+        // No-op now; we keep for compatibility if needed later
+        return false;
     }
 
-    updateHistory(chatId, userText, botReply) {
-        const history = this.getChatHistory(chatId);
-        history.push({ role: 'user', content: userText });
-        history.push({ role: 'assistant', content: botReply });
-
-        const maxHistoryEntries = BOT_CONFIG.HISTORY_LENGTH * 2;
-        while (history.length > maxHistoryEntries) {
-            history.shift();
-        }
-    }
-
-    truncateResponse(text) {
-        const limit = BOT_CONFIG.MAX_MESSAGE_LENGTH;
-        if (text.length <= limit) return text;
-
-        const truncated = text.slice(0, limit - 3);
-        const lastSpace = truncated.lastIndexOf(' ');
-        if (lastSpace > limit * 0.8) {
-            return `${truncated.slice(0, lastSpace)}...`;
-        }
-        return `${truncated}...`;
-    }
-
+    // Cache management
     getFromCache(key) {
-        const cached = this.responseCache.get(key);
-        if (!cached) return null;
-        if (Date.now() - cached.timestamp > CACHE_TTL) {
-            this.responseCache.delete(key);
-            return null;
+        const entry = this.cache.get(key);
+        if (entry && Date.now() - entry.timestamp < this.CACHE_TTL) {
+            return entry.value;
         }
-        return cached.value;
+        if (entry) this.cache.delete(key);
+        return null;
     }
 
     addToCache(key, value) {
-        if (this.responseCache.size >= MAX_CACHE_SIZE) {
-            const firstKey = this.responseCache.keys().next().value;
-            this.responseCache.delete(firstKey);
+        if (this.cache.size >= this.MAX_CACHE_SIZE) {
+            const firstKey = this.cache.keys().next().value;
+            this.cache.delete(firstKey);
         }
-        this.responseCache.set(key, { value, timestamp: Date.now() });
+        this.cache.set(key, { value, timestamp: Date.now() });
     }
 
-    cleanup() {
+    // History management
+    updateHistory(userText, botResponse) {
+        this.chatHistory.push(
+            { role: 'user', content: userText },
+            { role: 'assistant', content: botResponse }
+        );
+        
+        while (this.chatHistory.length > this.MAX_HISTORY) {
+            this.chatHistory.splice(1, 2);
+        }
+    }
+
+    truncateResponse(text, maxLength = BOT_CONFIG.MAX_MESSAGE_LENGTH || 450) {
+        if (text.length <= maxLength) return text;
+        
+        const truncated = text.substring(0, maxLength - 3);
+        const lastSpace = truncated.lastIndexOf(' ');
+        
+        return lastSpace > maxLength * 0.8 ? 
+            truncated.substring(0, lastSpace) + '...' : 
+            truncated + '...';
+    }
+
+    async sendMessage(channel, message) {
+        const truncated = this.truncateResponse(message, 500);
+        await this.client.say(channel, truncated);
+    }
+
+    async generateTTS(text) {
+        try {
+            const mp3 = await this.openai.audio.speech.create({
+                model: 'tts-1',
+                voice: 'alloy',
+                input: text.substring(0, 200)
+            });
+            
+            const buffer = Buffer.from(await mp3.arrayBuffer());
+            await fsPromises.writeFile('./public/file.mp3', buffer);
+        } catch (error) {
+            console.error('TTS error:', error.message);
+        }
+    }
+
+    // Cleanup and maintenance
+    startCleanup() {
+        setInterval(() => {
+            this.cleanupData();
+        }, 300000); // Every 5 minutes
+    }
+
+    cleanupData() {
         const now = Date.now();
-        const cooldownMs = TELEGRAM_CONFIG.COOLDOWN_SECONDS * 1000;
-
-        for (const [userId, timestamp] of this.userCooldowns.entries()) {
-            if (now - timestamp > cooldownMs) {
-                this.userCooldowns.delete(userId);
+        
+        // Clean cooldowns
+        for (const [username, timestamp] of this.userCooldowns.entries()) {
+            if (now - timestamp > 300000) {
+                this.userCooldowns.delete(username);
             }
         }
-
-        for (const [key, cached] of this.responseCache.entries()) {
-            if (now - cached.timestamp > CACHE_TTL) {
-                this.responseCache.delete(key);
+        
+        // Clean cache
+        for (const [key, entry] of this.cache.entries()) {
+            if (now - entry.timestamp > this.CACHE_TTL) {
+                this.cache.delete(key);
             }
         }
     }
 
+    // Public API
     getMetrics() {
+        const total = this.metrics.cacheHits + (this.metrics.processed - this.metrics.cacheHits);
+        const hitRate = total > 0 ? (this.metrics.cacheHits / total * 100).toFixed(1) : 0;
+        
         return {
-            ...this.metrics,
-            cachedResponses: this.responseCache.size,
-            trackedChats: this.chatHistories.size,
-            cooldownEntries: this.userCooldowns.size
+            processed: this.metrics.processed,
+            errors: this.metrics.errors,
+            cacheHitRate: `${hitRate}%`,
+            cacheSize: this.cache.size,
+            subscribers: this.subscribers.size,
+            moderators: this.moderators.size
         };
+    }
+
+    async disconnect() {
+        if (this.client) {
+            await this.client.disconnect();
+            console.log('­ƒñû Bot disconnected');
+        }
     }
 }
