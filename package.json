@@ -1,32 +1,20 @@
 {
-  "name": "Twitch Chat GPT",
-  "version": "2.0.0",
-  "description": "The Twitch Chat GPT is a bot that uses OpenAI's GPT-4 to generate messages based on the chat of a Twitch channel. It can be used to generate messages for a chatbot, or to generate, for example, a chatbot for a game.",
-  "main": "server.js",
+  "name": "mia-telegram-bot",
+  "version": "1.0.0",
+  "description": "Telegram bot powered by OpenAI with aggressive personality and mention-only responses.",
   "type": "module",
+  "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "node --inspect server.js",
-    "test": "node --test"
+    "dev": "node --watch server.js"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/pedrojlazevedo/twitch-chatgpt.git"
+  "engines": {
+    "node": ">=18.17.0"
   },
-  "author": "Pedro Azevedo",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/pedrojlazevedo/twitch-chatgpt/issues"
-  },
-  "homepage": "https://github.com/pedrojlazevedo/twitch-chatgpt#readme",
   "dependencies": {
-    "cron": "^3.1.1",
-    "dotenv": "^16.3.1",
-    "ejs": "^3.1.9",
-    "express": "^4.18.2",
-    "express-ws": "^5.0.2",
-    "openai": "^4.28.0",
-    "tmi.js": "^1.8.5",
-    "ws": "^8.14.2"
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "node-telegram-bot-api": "^0.65.1",
+    "openai": "^4.29.2"
   }
 }
