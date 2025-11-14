@@ -1,4 +1,4 @@
-﻿import express from 'express';
+import express from 'express';
 import { TwitchBot } from './bot.js';
 import { job, healthCheckJob, setBotInstance } from './keep_alive.js';
 import { validateConfig } from './config.js';
@@ -42,6 +42,11 @@ bot.initialize().then(() => {
 // Routes
 app.get('/', (_, res) => {
     res.render('pages/index');
+});
+
+// Dashboard route
+app.get('/dashboard', (_, res) => {
+    res.render('pages/dashboard');
 });
 
 // API endpoint with caching
@@ -118,6 +123,65 @@ app.get('/bot-status', (_, res) => {
         metrics: bot.getMetrics()
     });
 });
+
+// Dashboard data endpoint
+app.get('/api/dashboard', (_, res) => {
+    const botConnected = bot.client && bot.client.readyState() === 'OPEN';
+    const uptime = process.uptime();
+    const memory = process.memoryUsage();
+    
+    res.json({
+        bot: {
+            status: botConnected ? 'connected' : 'disconnected',
+            connectionState: bot.client ? bot.client.readyState() : 'not_initialized',
+            channels: bot.client ? bot.client.getChannels() : [],
+            uptime: {
+                seconds: Math.round(uptime),
+                formatted: formatUptime(uptime)
+            },
+            metrics: bot.getMetrics(),
+            reasoning: {
+                enabled: bot.isUsingReasoning(),
+                effort: process.env.REASONING_EFFORT || 'low'
+            }
+        },
+        config: {
+            model: process.env.MODEL_NAME || 'gpt-4o',
+            firstChatModel: process.env.FIRST_CHAT_MODEL || process.env.MODEL_NAME || 'gpt-4o',
+            temperature: parseFloat(process.env.TEMPERATURE) || 1.0,
+            maxTokens: parseInt(process.env.MAX_TOKENS) || 200,
+            cooldown: parseInt(process.env.COOLDOWN_DURATION) || 10,
+            subscribersOnly: process.env.SUBSCRIBERS_ONLY === 'true',
+            commandNames: (process.env.COMMAND_NAME || '!gpt').split(',').map(cmd => cmd.trim())
+        },
+        system: {
+            memory: {
+                used: Math.round(memory.heapUsed / 1024 / 1024),
+                total: Math.round(memory.heapTotal / 1024 / 1024),
+                external: Math.round(memory.external / 1024 / 1024)
+            },
+            cache: {
+                api: apiCache.size,
+                bot: bot.cache ? bot.cache.size : 0
+            },
+            nodeVersion: process.version,
+            platform: process.platform
+        }
+    });
+});
+
+// Helper function to format uptime
+function formatUptime(seconds) {
+    const days = Math.floor(seconds / 86400);
+    const hours = Math.floor((seconds % 86400) / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = Math.floor(seconds % 60);
+    
+    if (days > 0) return `${days}d ${hours}h ${minutes}m`;
+    if (hours > 0) return `${hours}h ${minutes}m ${secs}s`;
+    if (minutes > 0) return `${minutes}m ${secs}s`;
+    return `${secs}s`;
+}
 
 // Cache management
 app.post('/clear-cache', (_, res) => {
