@@ -40,9 +40,19 @@ bot.initialize().then(() => {
 });
 
 // Routes
+// Test route to check if server is working
+app.get('/test', (_, res) => {
+    res.send('Server is working! Bot status: ' + (bot ? 'initialized' : 'not initialized'));
+});
+
 // Main route - Dashboard as homepage
 app.get('/', (_, res) => {
-    res.render('pages/dashboard');
+    try {
+        res.render('pages/dashboard');
+    } catch (error) {
+        console.error('Dashboard render error:', error);
+        res.status(500).send('Dashboard error: ' + error.message);
+    }
 });
 
 // Keep old index for reference (optional)
@@ -127,48 +137,77 @@ app.get('/bot-status', (_, res) => {
 
 // Dashboard data endpoint
 app.get('/api/dashboard', (_, res) => {
-    const botConnected = bot.client && bot.client.readyState() === 'OPEN';
-    const uptime = process.uptime();
-    const memory = process.memoryUsage();
-    
-    res.json({
-        bot: {
-            status: botConnected ? 'connected' : 'disconnected',
-            connectionState: bot.client ? bot.client.readyState() : 'not_initialized',
-            channels: bot.client ? bot.client.getChannels() : [],
-            uptime: {
-                seconds: Math.round(uptime),
-                formatted: formatUptime(uptime)
-            },
-            metrics: bot.getMetrics(),
-            reasoning: {
-                enabled: bot.isUsingReasoning(),
-                effort: process.env.REASONING_EFFORT || 'low'
+    try {
+        const botConnected = bot && bot.client && bot.client.readyState() === 'OPEN';
+        const uptime = process.uptime();
+        const memory = process.memoryUsage();
+        
+        // Safe bot metrics
+        let botMetrics = { processed: 0, errors: 0, cacheHitRate: '0%', cacheSize: 0, subscribers: 0, moderators: 0 };
+        try {
+            if (bot && typeof bot.getMetrics === 'function') {
+                botMetrics = bot.getMetrics();
             }
-        },
-        config: {
-            model: process.env.MODEL_NAME || 'gpt-4o',
-            firstChatModel: process.env.FIRST_CHAT_MODEL || process.env.MODEL_NAME || 'gpt-4o',
-            temperature: parseFloat(process.env.TEMPERATURE) || 1.0,
-            maxTokens: parseInt(process.env.MAX_TOKENS) || 200,
-            cooldown: parseInt(process.env.COOLDOWN_DURATION) || 10,
-            subscribersOnly: process.env.SUBSCRIBERS_ONLY === 'true',
-            commandNames: (process.env.COMMAND_NAME || '!gpt').split(',').map(cmd => cmd.trim())
-        },
-        system: {
-            memory: {
-                used: Math.round(memory.heapUsed / 1024 / 1024),
-                total: Math.round(memory.heapTotal / 1024 / 1024),
-                external: Math.round(memory.external / 1024 / 1024)
-            },
-            cache: {
-                api: apiCache.size,
-                bot: bot.cache ? bot.cache.size : 0
-            },
-            nodeVersion: process.version,
-            platform: process.platform
+        } catch (e) {
+            console.warn('Error getting bot metrics:', e.message);
         }
-    });
+        
+        // Safe reasoning check
+        let reasoningEnabled = false;
+        try {
+            if (bot && typeof bot.isUsingReasoning === 'function') {
+                reasoningEnabled = bot.isUsingReasoning();
+            }
+        } catch (e) {
+            console.warn('Error checking reasoning mode:', e.message);
+        }
+        
+        res.json({
+            bot: {
+                status: botConnected ? 'connected' : 'disconnected',
+                connectionState: bot && bot.client ? bot.client.readyState() : 'not_initialized',
+                channels: bot && bot.client ? (bot.client.getChannels() || []) : [],
+                uptime: {
+                    seconds: Math.round(uptime),
+                    formatted: formatUptime(uptime)
+                },
+                metrics: botMetrics,
+                reasoning: {
+                    enabled: reasoningEnabled,
+                    effort: process.env.REASONING_EFFORT || 'low'
+                }
+            },
+            config: {
+                model: process.env.MODEL_NAME || 'gpt-4o',
+                firstChatModel: process.env.FIRST_CHAT_MODEL || process.env.MODEL_NAME || 'gpt-4o',
+                temperature: parseFloat(process.env.TEMPERATURE) || 1.0,
+                maxTokens: parseInt(process.env.MAX_TOKENS) || 200,
+                cooldown: parseInt(process.env.COOLDOWN_DURATION) || 10,
+                subscribersOnly: process.env.SUBSCRIBERS_ONLY === 'true',
+                commandNames: (process.env.COMMAND_NAME || '!gpt').split(',').map(cmd => cmd.trim())
+            },
+            system: {
+                memory: {
+                    used: Math.round(memory.heapUsed / 1024 / 1024),
+                    total: Math.round(memory.heapTotal / 1024 / 1024),
+                    external: Math.round(memory.external / 1024 / 1024)
+                },
+                cache: {
+                    api: apiCache.size,
+                    bot: bot && bot.cache ? bot.cache.size : 0
+                },
+                nodeVersion: process.version,
+                platform: process.platform
+            }
+        });
+    } catch (error) {
+        console.error('Dashboard API error:', error);
+        res.status(500).json({ 
+            error: 'Dashboard data error', 
+            message: error.message,
+            bot: { status: 'error' }
+        });
+    }
 });
 
 // Helper function to format uptime
