@@ -45,15 +45,9 @@ app.get('/test', (_, res) => {
     res.send('Server is working! Bot status: ' + (bot ? 'initialized' : 'not initialized'));
 });
 
-// Main route - Dashboard as homepage
+// Main route - Dashboard as homepage (redirect to working static version)
 app.get('/', (_, res) => {
-    try {
-        console.log('Attempting to render dashboard...');
-        res.render('pages/dashboard');
-    } catch (error) {
-        console.error('Dashboard render error:', error);
-        res.status(500).send('Dashboard error: ' + error.message);
-    }
+    res.redirect('/static');
 });
 
 // Static HTML version for testing
