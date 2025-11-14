@@ -207,7 +207,7 @@ export class TwitchBot {
             temperature: sampling.temperature,
             max_completion_tokens: maxTokens,
             top_p: sampling.top_p,
-            reasoning_effort: 'none'  // Disable reasoning mode for chat-like responses
+            reasoning_effort: 'low'  // Enable low reasoning mode for better responses
         };
 
         let response = await this.openai.chat.completions.create(config);
@@ -219,7 +219,14 @@ export class TwitchBot {
         if ((!content || content.length === 0) && finish_reason === 'length') {
             console.log('[bot] Empty response due to length. Retrying with higher token budget...');
             const boostedTokens = Math.min((OPENAI_CONFIG.MAX_TOKENS || maxTokens) * 2, 500);
-            const retryConfig = { ...config, max_completion_tokens: boostedTokens };
+            const retryConfig = {
+                model,
+                messages,
+                temperature: sampling.temperature,
+                max_completion_tokens: boostedTokens,
+                top_p: sampling.top_p,
+                reasoning_effort: 'low'
+            };
             response = await this.openai.chat.completions.create(retryConfig);
             ({ content, finish_reason } = this.extractChoice(response));
         }
@@ -228,10 +235,12 @@ export class TwitchBot {
         if (!content || content.length === 0) {
             console.log('[bot] Still empty after retry. Trying conservative sampling.');
             const fallbackConfig = {
-                ...config,
+                model,
+                messages,
                 temperature: Math.max(0.7, sampling.temperature),
+                max_completion_tokens: Math.min((OPENAI_CONFIG.MAX_TOKENS || maxTokens) * 2, 500),
                 top_p: Math.min(0.95, sampling.top_p),
-                max_completion_tokens: Math.min((OPENAI_CONFIG.MAX_TOKENS || maxTokens) * 2, 500)
+                reasoning_effort: 'low'
             };
             response = await this.openai.chat.completions.create(fallbackConfig);
             ({ content } = this.extractChoice(response));
