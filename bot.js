@@ -205,10 +205,11 @@ export class TwitchBot {
             model,
             messages,
             temperature: sampling.temperature,
-            max_tokens: maxTokens,
+            max_completion_tokens: maxTokens,
             top_p: sampling.top_p,
             frequency_penalty: OPENAI_CONFIG.FREQUENCY_PENALTY,
-            presence_penalty: OPENAI_CONFIG.PRESENCE_PENALTY
+            presence_penalty: OPENAI_CONFIG.PRESENCE_PENALTY,
+            reasoning_effort: null  // Disable reasoning mode for chat-like responses
         };
 
         let response = await this.openai.chat.completions.create(config);
@@ -220,7 +221,7 @@ export class TwitchBot {
         if ((!content || content.length === 0) && finish_reason === 'length') {
             console.log('[bot] Empty response due to length. Retrying with higher token budget...');
             const boostedTokens = Math.min((OPENAI_CONFIG.MAX_TOKENS || maxTokens) * 2, 500);
-            const retryConfig = { ...config, max_tokens: boostedTokens };
+            const retryConfig = { ...config, max_completion_tokens: boostedTokens };
             response = await this.openai.chat.completions.create(retryConfig);
             ({ content, finish_reason } = this.extractChoice(response));
         }
@@ -232,7 +233,7 @@ export class TwitchBot {
                 ...config,
                 temperature: Math.max(0.7, sampling.temperature),
                 top_p: Math.min(0.95, sampling.top_p),
-                max_tokens: Math.min((OPENAI_CONFIG.MAX_TOKENS || maxTokens) * 2, 500)
+                max_completion_tokens: Math.min((OPENAI_CONFIG.MAX_TOKENS || maxTokens) * 2, 500)
             };
             response = await this.openai.chat.completions.create(fallbackConfig);
             ({ content } = this.extractChoice(response));
