@@ -48,11 +48,154 @@ app.get('/test', (_, res) => {
 // Main route - Dashboard as homepage
 app.get('/', (_, res) => {
     try {
+        console.log('Attempting to render dashboard...');
         res.render('pages/dashboard');
     } catch (error) {
         console.error('Dashboard render error:', error);
         res.status(500).send('Dashboard error: ' + error.message);
     }
+});
+
+// Static HTML version for testing
+app.get('/static', (_, res) => {
+    res.send(`
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>M-IA Khalifa V2 - Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            backdrop-filter: blur(10px);
+        }
+        .status {
+            font-size: 18px;
+            margin: 10px 0;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+        }
+        .error {
+            background: rgba(255, 0, 0, 0.2);
+            border: 1px solid red;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 M-IA Khalifa V2 Dashboard</h1>
+        
+        <div id="loading" class="loading">
+            <p>Cargando datos...</p>
+        </div>
+        
+        <div id="error" class="error" style="display: none;"></div>
+        
+        <div id="content" style="display: none;">
+            <div class="card">
+                <h3>Estado del Bot</h3>
+                <div class="status" id="bot-status">Verificando...</div>
+                <div class="status" id="bot-uptime">Uptime: -</div>
+                <div class="status" id="bot-channels">Canales: -</div>
+            </div>
+            
+            <div class="card">
+                <h3>Configuración</h3>
+                <div class="status" id="config-model">Modelo: -</div>
+                <div class="status" id="config-reasoning">Razonamiento: -</div>
+                <div class="status" id="config-temp">Temperatura: -</div>
+            </div>
+            
+            <div class="card">
+                <h3>Sistema</h3>
+                <div class="status" id="system-memory">Memoria: -</div>
+                <div class="status" id="system-platform">Plataforma: -</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function loadData() {
+            try {
+                console.log('Cargando datos del dashboard...');
+                
+                const response = await fetch('/api/dashboard');
+                console.log('Response status:', response.status);
+                
+                if (!response.ok) {
+                    throw new Error(\`HTTP \${response.status}: \${response.statusText}\`);
+                }
+                
+                const data = await response.json();
+                console.log('Data received:', data);
+                
+                // Update UI
+                document.getElementById('bot-status').textContent = 
+                    \`Estado: \${data.bot.status === 'connected' ? '✅ Conectado' : '❌ Desconectado'}\`;
+                
+                document.getElementById('bot-uptime').textContent = 
+                    \`Uptime: \${data.bot.uptime ? data.bot.uptime.formatted : 'N/A'}\`;
+                
+                document.getElementById('bot-channels').textContent = 
+                    \`Canales: \${data.bot.channels ? data.bot.channels.join(', ') : 'Ninguno'}\`;
+                
+                document.getElementById('config-model').textContent = 
+                    \`Modelo: \${data.config.model}\`;
+                
+                document.getElementById('config-reasoning').textContent = 
+                    \`Razonamiento: \${data.bot.reasoning.enabled ? 'Activo (' + data.bot.reasoning.effort + ')' : 'Desactivado'}\`;
+                
+                document.getElementById('config-temp').textContent = 
+                    \`Temperatura: \${data.config.temperature}\`;
+                
+                document.getElementById('system-memory').textContent = 
+                    \`Memoria: \${data.system.memory.used}MB / \${data.system.memory.total}MB\`;
+                
+                document.getElementById('system-platform').textContent = 
+                    \`Plataforma: \${data.system.platform}\`;
+                
+                // Show content, hide loading
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('content').style.display = 'block';
+                
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('error').style.display = 'block';
+                document.getElementById('error').textContent = 'Error: ' + error.message;
+            }
+        }
+        
+        // Load data when page loads
+        document.addEventListener('DOMContentLoaded', loadData);
+        
+        // Auto-refresh every 30 seconds
+        setInterval(loadData, 30000);
+    </script>
+</body>
+</html>
+    `);
 });
 
 // Keep old index for reference (optional)
