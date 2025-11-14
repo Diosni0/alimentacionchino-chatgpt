@@ -209,7 +209,7 @@ export class TwitchBot {
             top_p: sampling.top_p,
             frequency_penalty: OPENAI_CONFIG.FREQUENCY_PENALTY,
             presence_penalty: OPENAI_CONFIG.PRESENCE_PENALTY,
-            reasoning_effort: null  // Disable reasoning mode for chat-like responses
+            reasoning_effort: 'none'  // Disable reasoning mode for chat-like responses
         };
 
         let response = await this.openai.chat.completions.create(config);
