@@ -40,13 +40,14 @@ bot.initialize().then(() => {
 });
 
 // Routes
+// Main route - Dashboard as homepage
 app.get('/', (_, res) => {
-    res.render('pages/index');
+    res.render('pages/dashboard');
 });
 
-// Dashboard route
-app.get('/dashboard', (_, res) => {
-    res.render('pages/dashboard');
+// Keep old index for reference (optional)
+app.get('/old', (_, res) => {
+    res.render('pages/index');
 });
 
 // API endpoint with caching
