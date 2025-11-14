@@ -46,7 +46,8 @@ export const OPENAI_CONFIG = {
     TOP_P: parseFloatOrDefault(process.env.TOP_P, 1.0),
     FREQUENCY_PENALTY: parseFloatOrDefault(process.env.FREQUENCY_PENALTY, 0.5),
     PRESENCE_PENALTY: parseFloatOrDefault(process.env.PRESENCE_PENALTY, 0.0),
-    HISTORY_LENGTH: parseInteger(process.env.HISTORY_LENGTH, 5)
+    HISTORY_LENGTH: parseInteger(process.env.HISTORY_LENGTH, 5),
+    REASONING_EFFORT: process.env.REASONING_EFFORT || 'low'
 };
 
 export const TWITCH_CONFIG = {
