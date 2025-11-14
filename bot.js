@@ -207,8 +207,6 @@ export class TwitchBot {
             temperature: sampling.temperature,
             max_completion_tokens: maxTokens,
             top_p: sampling.top_p,
-            frequency_penalty: OPENAI_CONFIG.FREQUENCY_PENALTY,
-            presence_penalty: OPENAI_CONFIG.PRESENCE_PENALTY,
             reasoning_effort: 'none'  // Disable reasoning mode for chat-like responses
         };
 
