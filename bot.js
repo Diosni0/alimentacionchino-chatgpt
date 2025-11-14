@@ -179,12 +179,12 @@ export class TwitchBot {
     getSamplingParamsForUser(username) {
         const key = this.getUserKey(username);
         const isFirst = !this.firstInteractionSeen.has(key);
-        
+
         // If using reasoning, force temperature to 1 (only supported value)
         if (this.isUsingReasoning()) {
             return { key, isFirst, temperature: 1, top_p: 1 };
         }
-        
+
         // Normal chat mode - use configured values
         const temperature = isFirst ? OPENAI_CONFIG.TEMPERATURE : OPENAI_CONFIG.SECOND_TEMPERATURE;
         const top_p = isFirst ? OPENAI_CONFIG.TOP_P : OPENAI_CONFIG.SECOND_TOP_P;
@@ -204,14 +204,17 @@ export class TwitchBot {
         const model = this.getModelForInteraction(sampling.isFirst);
 
         // Debug: Log what we're sending to OpenAI
+        const isReasoning = this.isUsingReasoning();
         console.log('[bot] Sending to OpenAI:', {
             model,
+            reasoningMode: isReasoning ? `YES (${OPENAI_CONFIG.REASONING_EFFORT})` : 'NO (chat mode)',
             systemMessage: messages[0].content.substring(0, 150) + '...',
             userMessage: text,
             historyLength: messages.length,
             maxTokens,
             temperature: sampling.temperature,
-            top_p: sampling.top_p
+            top_p: sampling.top_p,
+            reasoning_effort: OPENAI_CONFIG.REASONING_EFFORT
         });
 
         const config = {
@@ -250,7 +253,7 @@ export class TwitchBot {
             // For reasoning models, we can't change temperature, so use original values
             const fallbackTemp = this.isUsingReasoning() ? 1 : Math.max(0.7, sampling.temperature);
             const fallbackTopP = this.isUsingReasoning() ? 1 : Math.min(0.95, sampling.top_p);
-            
+
             const fallbackConfig = {
                 model,
                 messages,
