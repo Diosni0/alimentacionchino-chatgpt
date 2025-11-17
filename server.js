@@ -887,7 +887,7 @@ app.get('/bot-status', (_, res) => {
 });
 
 // Reasoning mode change endpoint
-app.post('/api/reasoning-mode', (req, res) => {
+app.post('/api/reasoning-mode', async (req, res) => {
     try {
         const { mode } = req.body;
         
@@ -897,8 +897,8 @@ app.post('/api/reasoning-mode', (req, res) => {
             });
         }
         
-        // Update the configuration dynamically
-        const { OPENAI_CONFIG } = require('./config.js');
+        // Import and update configuration
+        const { OPENAI_CONFIG } = await import('./config.js');
         OPENAI_CONFIG.REASONING_EFFORT = mode;
         
         console.log(`🧠 Reasoning mode changed to: ${mode}`);
