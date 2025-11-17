@@ -77,11 +77,9 @@ export const SERVER_CONFIG = {
 
 export const getFileContext = () => {
     try {
-        // Try to load TOON format first
+        // Try to load TOON format first (use raw content as prompt)
         if (fs.existsSync('./file_context.toon')) {
-            const toonContent = fs.readFileSync('./file_context.toon', 'utf8');
-            const contextData = parseToon(toonContent);
-            return formatContextForLLM(contextData);
+            return fs.readFileSync('./file_context.toon', 'utf8');
         }
         
         // Fallback to original text format
