@@ -1,7 +1,7 @@
 import express from 'express';
 import { TwitchBot } from './bot.js';
 import { job, healthCheckJob, setBotInstance } from './keep_alive.js';
-import { validateConfig } from './config.js';
+import { validateConfig, OPENAI_CONFIG } from './config.js';
 
 // Validate configuration
 if (!validateConfig()) {
@@ -369,28 +369,7 @@ app.get('/static', (_, res) => {
             z-index: 100;
         }
         
-        .reasoning-selector {
-            background: #27272a;
-            border: 1px solid #3f3f46;
-            color: #e4e4e7;
-            padding: 0.25rem 0.5rem;
-            border-radius: 6px;
-            font-size: 0.75rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-        
-        .reasoning-selector:hover {
-            border-color: #52525b;
-            background: #3f3f46;
-        }
-        
-        .reasoning-selector:focus {
-            outline: none;
-            border-color: #10b981;
-            box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
-        }
+
     </style>
 </head>
 <body>
@@ -492,15 +471,7 @@ app.get('/static', (_, res) => {
                     </div>
                     <div class="config-item">
                         <span class="config-label">Razonamiento</span>
-                        <div style="display: flex; align-items: center; gap: 0.5rem;">
-                            <span id="reasoning-status" class="badge secondary">-</span>
-                            <select id="reasoning-selector" class="reasoning-selector" onchange="changeReasoningMode(this.value)">
-                                <option value="low">Low</option>
-                                <option value="medium">Medium</option>
-                                <option value="high">High</option>
-                                <option value="none">Desactivado</option>
-                            </select>
-                        </div>
+                        <span id="reasoning-status" class="badge secondary">-</span>
                     </div>
                     <div class="config-item">
                         <span class="config-label">Temperatura</span>
@@ -635,16 +606,13 @@ app.get('/static', (_, res) => {
                 document.getElementById('ai-model').textContent = data.config.model;
                 
                 const reasoningStatus = document.getElementById('reasoning-status');
-                const reasoningSelector = document.getElementById('reasoning-selector');
                 
                 if (data.bot.reasoning.enabled) {
                     reasoningStatus.className = 'badge success';
                     reasoningStatus.textContent = \`🧠 \${data.bot.reasoning.effort.toUpperCase()}\`;
-                    reasoningSelector.value = data.bot.reasoning.effort;
                 } else {
                     reasoningStatus.className = 'badge secondary';
                     reasoningStatus.textContent = '❌ Desactivado';
-                    reasoningSelector.value = 'none';
                 }
                 
                 document.getElementById('temperature-value').textContent = data.config.temperature;
@@ -737,69 +705,7 @@ app.get('/static', (_, res) => {
             }
         }, 15000);
         
-        // Function to change reasoning mode
-        async function changeReasoningMode(newMode) {
-            try {
-                console.log('Cambiando modo de razonamiento a:', newMode);
-                
-                const response = await fetch('/api/reasoning-mode', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ mode: newMode })
-                });
-                
-                if (!response.ok) {
-                    throw new Error(\`Error \${response.status}: \${response.statusText}\`);
-                }
-                
-                const result = await response.json();
-                console.log('Modo de razonamiento actualizado:', result);
-                
-                // Update UI immediately
-                const reasoningStatus = document.getElementById('reasoning-status');
-                if (newMode === 'none') {
-                    reasoningStatus.className = 'badge secondary';
-                    reasoningStatus.textContent = '❌ Desactivado';
-                } else {
-                    reasoningStatus.className = 'badge success';
-                    reasoningStatus.textContent = \`🧠 \${newMode.toUpperCase()}\`;
-                }
-                
-                // Show success feedback
-                const selector = document.getElementById('reasoning-selector');
-                const originalBorder = selector.style.borderColor;
-                selector.style.borderColor = '#10b981';
-                selector.style.boxShadow = '0 0 0 2px rgba(16, 185, 129, 0.2)';
-                
-                setTimeout(() => {
-                    selector.style.borderColor = originalBorder;
-                    selector.style.boxShadow = '';
-                }, 1000);
-                
-                // Refresh data to show updated config
-                setTimeout(loadData, 500);
-                
-            } catch (error) {
-                console.error('Error cambiando modo de razonamiento:', error);
-                
-                // Show error feedback
-                const selector = document.getElementById('reasoning-selector');
-                const originalBorder = selector.style.borderColor;
-                selector.style.borderColor = '#ef4444';
-                selector.style.boxShadow = '0 0 0 2px rgba(239, 68, 68, 0.2)';
-                
-                setTimeout(() => {
-                    selector.style.borderColor = originalBorder;
-                    selector.style.boxShadow = '';
-                    // Revert selector to previous value
-                    loadData();
-                }, 1000);
-                
-                alert('Error al cambiar el modo de razonamiento: ' + error.message);
-            }
-        }
+
     </script>
 </body>
 </html>
@@ -886,38 +792,6 @@ app.get('/bot-status', (_, res) => {
     });
 });
 
-// Reasoning mode change endpoint
-app.post('/api/reasoning-mode', async (req, res) => {
-    try {
-        const { mode } = req.body;
-        
-        if (!mode || !['low', 'medium', 'high', 'none'].includes(mode)) {
-            return res.status(400).json({ 
-                error: 'Invalid mode. Must be one of: low, medium, high, none' 
-            });
-        }
-        
-        // Import and update configuration
-        const { OPENAI_CONFIG } = await import('./config.js');
-        OPENAI_CONFIG.REASONING_EFFORT = mode;
-        
-        console.log(`🧠 Reasoning mode changed to: ${mode}`);
-        
-        res.json({ 
-            success: true, 
-            mode: mode,
-            message: `Modo de razonamiento cambiado a: ${mode}`,
-            timestamp: new Date().toISOString()
-        });
-        
-    } catch (error) {
-        console.error('Error changing reasoning mode:', error);
-        res.status(500).json({ 
-            error: 'Internal server error',
-            message: error.message 
-        });
-    }
-});
 
 // Dashboard data endpoint
 app.get('/api/dashboard', (_, res) => {
