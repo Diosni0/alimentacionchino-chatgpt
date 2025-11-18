@@ -42,7 +42,7 @@ export const OPENAI_CONFIG = {
         const raw = process.env.MAX_TOKENS
             || process.env.MAX_COMPLETION_TOKENS
             || process.env.max_completion_tokens;
-        return parseInteger(raw, 200);
+        return parseInteger(raw, 100);
     })(),
     TOP_P: parseFloatOrDefault(process.env.TOP_P, 1.0),
     FREQUENCY_PENALTY: parseFloatOrDefault(process.env.FREQUENCY_PENALTY, 0.5),
@@ -68,7 +68,7 @@ export const BOT_CONFIG = {
     ENABLE_TTS: parseBoolean(process.env.ENABLE_TTS, false),
     ENABLE_CHANNEL_POINTS: parseBoolean(process.env.ENABLE_CHANNEL_POINTS, false),
     COOLDOWN_DURATION: parseInteger(process.env.COOLDOWN_DURATION, 10),
-    MAX_MESSAGE_LENGTH: parseInteger(process.env.MAX_MESSAGE_LENGTH, 450)
+    MAX_MESSAGE_LENGTH: parseInteger(process.env.MAX_MESSAGE_LENGTH, 300)
 };
 
 export const SERVER_CONFIG = {
