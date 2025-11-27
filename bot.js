@@ -151,11 +151,17 @@ export class TwitchBot {
 
     // Calculate a safe max tokens budget based on configured char limit
     calculateMaxTokens() {
-        const charLimit = BOT_CONFIG.MAX_MESSAGE_LENGTH || 450;
+        const charLimit = BOT_CONFIG.MAX_MESSAGE_LENGTH || 200;
         // Approx conversion: ~4 chars per token for ES/EN average, add safety margin
-        const estimatedTokens = Math.ceil(charLimit / 4) + 10; // +10 buffer
-        const upperBound = OPENAI_CONFIG.MAX_TOKENS || 200;
-        const lowerBound = 60; // a little higher to help first answers
+        let estimatedTokens = Math.ceil(charLimit / 4);
+        
+        // Si estamos usando modo razonamiento, ser más restrictivo
+        if (this.isUsingReasoning()) {
+            estimatedTokens = Math.ceil(estimatedTokens * 0.7); // 30% menos tokens para razonamiento
+        }
+        
+        const upperBound = OPENAI_CONFIG.MAX_TOKENS || 60;
+        const lowerBound = 30; // Más bajo para forzar respuestas cortas
         return Math.max(lowerBound, Math.min(estimatedTokens, upperBound));
     }
 
@@ -272,6 +278,12 @@ export class TwitchBot {
         }
 
         console.log('[bot] Got response:', content.substring(0, 100) + '...');
+        
+        // Limpiar formato markdown si estamos usando modo razonamiento
+        if (this.isUsingReasoning()) {
+            content = this.cleanReasoningResponse(content);
+        }
+        
         return this.truncateResponse(content);
     }
 
@@ -337,6 +349,38 @@ export class TwitchBot {
         return false;
     }
 
+    // Limpiar formato markdown del modo razonamiento
+    cleanReasoningResponse(text) {
+        if (!text) return text;
+        
+        // Eliminar asteriscos usados como énfasis (*texto* o **texto**)
+        text = text.replace(/\*{1,2}([^*]+)\*{1,2}/g, '$1');
+        
+        // Eliminar asteriscos sueltos al inicio o final
+        text = text.replace(/^\*+|\*+$/g, '');
+        
+        // Eliminar asteriscos múltiples en el medio
+        text = text.replace(/\*{2,}/g, '');
+        
+        // Eliminar guiones bajos usados como énfasis (_texto_)
+        text = text.replace(/_{1,2}([^_]+)_{1,2}/g, '$1');
+        
+        // Eliminar backticks de código (`texto`)
+        text = text.replace(/`([^`]+)`/g, '$1');
+        
+        // Eliminar hashtags de headers (# texto)
+        text = text.replace(/^#+\s*/gm, '');
+        
+        // Limpiar espacios múltiples
+        text = text.replace(/\s+/g, ' ');
+        
+        // Limpiar espacios al inicio y final
+        text = text.trim();
+        
+        console.log('[bot] Cleaned reasoning response from markdown formatting');
+        return text;
+    }
+
     // Cache management
     getFromCache(key) {
         const entry = this.cache.get(key);
@@ -367,11 +411,29 @@ export class TwitchBot {
         }
     }
 
-    truncateResponse(text, maxLength = BOT_CONFIG.MAX_MESSAGE_LENGTH || 450) {
+    truncateResponse(text, maxLength = BOT_CONFIG.MAX_MESSAGE_LENGTH || 200) {
         if (text.length <= maxLength) return text;
+
+        // Para respuestas muy largas del modo razonamiento, buscar el primer punto o coma
+        if (text.length > maxLength * 2) {
+            const firstSentence = text.match(/^[^.!?]*[.!?]/);
+            if (firstSentence && firstSentence[0].length <= maxLength) {
+                return firstSentence[0].trim();
+            }
+        }
 
         const truncated = text.substring(0, maxLength - 3);
         const lastSpace = truncated.lastIndexOf(' ');
+        const lastPunctuation = Math.max(
+            truncated.lastIndexOf('.'),
+            truncated.lastIndexOf(','),
+            truncated.lastIndexOf('!')
+        );
+
+        // Priorizar cortar en puntuación si está cerca del final
+        if (lastPunctuation > maxLength * 0.7) {
+            return truncated.substring(0, lastPunctuation + 1);
+        }
 
         return lastSpace > maxLength * 0.8 ?
             truncated.substring(0, lastSpace) + '...' :
