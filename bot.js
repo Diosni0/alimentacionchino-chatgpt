@@ -151,17 +151,17 @@ export class TwitchBot {
 
     // Calculate a safe max tokens budget based on configured char limit
     calculateMaxTokens() {
-        const charLimit = BOT_CONFIG.MAX_MESSAGE_LENGTH || 120;
+        const charLimit = BOT_CONFIG.MAX_MESSAGE_LENGTH || 180;
         // Approx conversion: ~4 chars per token for ES/EN average, add safety margin
-        let estimatedTokens = Math.ceil(charLimit / 4);
+        let estimatedTokens = Math.ceil(charLimit / 3.5);
         
-        // Si estamos usando modo razonamiento, ser más restrictivo pero realista
+        // Si estamos usando modo razonamiento, ser un poco más restrictivo
         if (this.isUsingReasoning()) {
-            estimatedTokens = Math.ceil(estimatedTokens * 0.6); // 40% menos tokens para razonamiento
+            estimatedTokens = Math.ceil(estimatedTokens * 0.75); // 25% menos tokens para razonamiento
         }
         
-        const upperBound = OPENAI_CONFIG.MAX_TOKENS || 50;
-        const lowerBound = 30; // Mínimo realista para respuestas cortas
+        const upperBound = OPENAI_CONFIG.MAX_TOKENS || 80;
+        const lowerBound = 40; // Mínimo para respuestas completas
         return Math.max(lowerBound, Math.min(estimatedTokens, upperBound));
     }
 
@@ -237,10 +237,10 @@ export class TwitchBot {
         // Try to extract content
         let { content, finish_reason } = this.extractChoice(response);
 
-        // If empty content due to length, retry with slightly higher budget (pero no mucho)
+        // If empty content due to length, retry with higher budget
         if ((!content || content.length === 0) && finish_reason === 'length') {
             console.log('[bot] Empty response due to length. Retrying with higher token budget...');
-            const boostedTokens = Math.min((OPENAI_CONFIG.MAX_TOKENS || maxTokens) * 1.5, 80);
+            const boostedTokens = Math.min((OPENAI_CONFIG.MAX_TOKENS || maxTokens) * 1.8, 150);
             const retryConfig = {
                 model,
                 messages,
@@ -264,7 +264,7 @@ export class TwitchBot {
                 model,
                 messages,
                 temperature: fallbackTemp,
-                max_completion_tokens: Math.min((OPENAI_CONFIG.MAX_TOKENS || maxTokens) * 1.5, 80),
+                max_completion_tokens: Math.min((OPENAI_CONFIG.MAX_TOKENS || maxTokens) * 2, 150),
                 top_p: fallbackTopP,
                 reasoning_effort: OPENAI_CONFIG.REASONING_EFFORT
             };
@@ -411,27 +411,35 @@ export class TwitchBot {
         }
     }
 
-    truncateResponse(text, maxLength = BOT_CONFIG.MAX_MESSAGE_LENGTH || 120) {
+    truncateResponse(text, maxLength = BOT_CONFIG.MAX_MESSAGE_LENGTH || 180) {
         if (text.length <= maxLength) return text;
 
-        // Para modo razonamiento, ser ULTRA agresivo con el truncado
+        // Para modo razonamiento, truncado inteligente pero no ultra agresivo
         if (this.isUsingReasoning()) {
-            // Buscar la primera oración completa que quepa
-            const firstSentence = text.match(/^[^.!?]*[.!?]/);
-            if (firstSentence && firstSentence[0].length <= maxLength) {
-                return firstSentence[0].trim();
+            // Intentar cortar en punto, exclamación o interrogación
+            const sentences = text.match(/[^.!?]+[.!?]+/g);
+            if (sentences && sentences.length > 0) {
+                let result = '';
+                for (const sentence of sentences) {
+                    if ((result + sentence).length <= maxLength) {
+                        result += sentence;
+                    } else {
+                        break;
+                    }
+                }
+                if (result.length > 0) return result.trim();
             }
             
-            // Si no hay oración completa, buscar primera coma
-            const firstComma = text.indexOf(',');
-            if (firstComma > 0 && firstComma <= maxLength) {
-                return text.substring(0, firstComma).trim();
-            }
-            
-            // Último recurso: cortar en espacio más cercano
+            // Si no hay oraciones completas, buscar coma
             const truncated = text.substring(0, maxLength - 3);
+            const lastComma = truncated.lastIndexOf(',');
+            if (lastComma > maxLength * 0.6) {
+                return truncated.substring(0, lastComma).trim();
+            }
+            
+            // Último recurso: cortar en espacio
             const lastSpace = truncated.lastIndexOf(' ');
-            return lastSpace > maxLength * 0.6 ?
+            return lastSpace > maxLength * 0.7 ?
                 truncated.substring(0, lastSpace) :
                 truncated.substring(0, maxLength - 3);
         }

@@ -3,24 +3,25 @@
 ## 🎯 Problema Resuelto
 El bot en modo razonamiento generaba respuestas demasiado largas (200+ caracteres) que no cabían bien en Twitch.
 
-## ✅ Solución Implementada (v2.1)
+## ✅ Solución Implementada (v2.2 - Balanceada)
 
-### 1. Límites Más Estrictos
-- **MAX_MESSAGE_LENGTH**: 120 caracteres (antes 200)
-- **MAX_TOKENS**: 50 tokens (antes 60)
-- **Reducción en razonamiento**: 40% menos tokens (antes 30%)
-- **Mínimo tokens**: 30 (ajustado desde 20 para evitar errores)
+### 1. Límites Balanceados
+- **MAX_MESSAGE_LENGTH**: 180 caracteres (antes 200)
+- **MAX_TOKENS**: 80 tokens (antes 60)
+- **Reducción en razonamiento**: 25% menos tokens (balance óptimo)
+- **Mínimo tokens**: 40 (suficiente para respuestas completas)
 
-### 2. Truncado Ultra Agresivo
-El bot ahora corta las respuestas de forma más inteligente:
-- Busca la primera oración completa que quepa
-- Si no, corta en la primera coma
-- Sin puntos suspensivos para ahorrar espacio
-- Corte directo en espacio más cercano
+### 2. Truncado Inteligente
+El bot ahora corta las respuestas de forma inteligente:
+- Incluye todas las oraciones completas que quepan en 180 chars
+- Prioriza cortar en puntos, exclamaciones o interrogaciones
+- Si no hay puntuación, corta en coma
+- Fallback a espacio más cercano
 
-### 3. Retry Limitado
+### 3. Retry Mejorado
 - Antes: 2x tokens en retry (hasta 500)
-- Ahora: 1.5x tokens en retry (máximo 80)
+- Ahora: 1.8x tokens en retry (máximo 150)
+- Más generoso para evitar respuestas vacías
 
 ## 🚀 Cómo Usar
 
@@ -33,18 +34,23 @@ npm start
 ### Opción 2: Configurar manualmente
 Si quieres ajustar más, edita tu archivo `.env`:
 ```bash
-# Para respuestas ULTRA cortas (recomendado)
-MAX_MESSAGE_LENGTH=120
-MAX_TOKENS=50
+# Para respuestas balanceadas (recomendado)
+MAX_MESSAGE_LENGTH=180
+MAX_TOKENS=80
 REASONING_EFFORT=low
 
-# Si siguen siendo largas, reduce más (pero no menos de 30 tokens)
-MAX_MESSAGE_LENGTH=100
-MAX_TOKENS=40
+# Si siguen siendo largas, reduce más
+MAX_MESSAGE_LENGTH=150
+MAX_TOKENS=60
+
+# Si son demasiado cortas, aumenta
+MAX_MESSAGE_LENGTH=200
+MAX_TOKENS=100
 ```
 
 ### ⚠️ Importante
-No uses menos de 30 tokens o el bot dará error "max_tokens reached".
+- No uses menos de 40 tokens o el bot dará respuestas vacías
+- No uses más de 250 chars o serán ladrillos de texto
 
 ## 📊 Resultados Esperados
 
@@ -52,15 +58,17 @@ No uses menos de 30 tokens o el bot dará error "max_tokens reached".
 ```
 *Jajaja* que **patético** eres, *cariño*. Tu pregunta es tan **estúpida** 
 como tu cara. Seguro que tu madre se arrepiente de no haberte abortado 
-cuando tuvo la oportunidad. Eres más inútil que Yang limpiando el mostrador.
+cuando tuvo la oportunidad. Eres más inútil que Yang limpiando el mostrador, 
+y eso ya es decir mucho. Además, tu familia entera debería estar avergonzada.
 ```
-**Longitud**: ~250 caracteres ❌
+**Longitud**: ~300+ caracteres ❌ (LADRILLO)
 
-### Después (optimizado)
+### Después (optimizado v2.2)
 ```
-Jajaja que patético eres. Tu pregunta es tan estúpida como tu cara.
+Jajaja que patético eres. Tu pregunta es tan estúpida como tu cara, 
+seguro tu madre se arrepiente. Eres más inútil que Yang limpiando el mostrador.
 ```
-**Longitud**: ~70 caracteres ✅
+**Longitud**: ~150 caracteres ✅ (COMPLETO PERO NO ES LADRILLO)
 
 ## 🔍 Verificar que Funciona
 
@@ -81,18 +89,22 @@ Jajaja que patético eres. Tu pregunta es tan estúpida como tu cara.
 - Esto es normal y esperado en modo razonamiento
 - No te preocupes por los tokens de pensamiento, solo importa la respuesta
 
-## 🐛 Si Siguen Siendo Largas
+## 🐛 Solución de Problemas
 
-1. Reduce `MAX_TOKENS` a 40 en tu `.env` (no menos de 30)
-2. Reduce `MAX_MESSAGE_LENGTH` a 100
+### Si las respuestas son demasiado largas (ladrillos)
+1. Reduce `MAX_TOKENS` a 60 en tu `.env`
+2. Reduce `MAX_MESSAGE_LENGTH` a 150
 3. Verifica que `REASONING_EFFORT=low` (no `medium` o `high`)
-4. Revisa los logs para ver si el truncado está funcionando
 
-## ⚠️ Si Recibes Error "max_tokens reached"
+### Si las respuestas son demasiado cortas o vacías
+1. Aumenta `MAX_TOKENS` a 100 en tu `.env`
+2. Aumenta `MAX_MESSAGE_LENGTH` a 200
+3. Revisa los logs para ver si hay errores "max_tokens reached"
 
+### Si recibes "Perdón cariño, me he quedado sin palabras"
 Esto significa que los tokens son demasiado bajos. Aumenta `MAX_TOKENS`:
 ```bash
-MAX_TOKENS=50  # o 60 si sigue fallando
+MAX_TOKENS=80  # o 100 si sigue fallando
 ```
 
 ## 📝 Archivos Modificados

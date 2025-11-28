@@ -7,23 +7,23 @@
 
 ## ✅ Soluciones Implementadas
 
-### 1. Límites de Caracteres ULTRA Reducidos
-- **MAX_MESSAGE_LENGTH**: Reducido a **120 caracteres** (límite crítico)
-- **Límite en contexto**: **120 caracteres máximo absoluto**
-- **Sin excepciones**: Modo razonamiento fuerza respuestas aún más cortas
+### 1. Límites de Caracteres Balanceados
+- **MAX_MESSAGE_LENGTH**: Reducido a **180 caracteres** (balance óptimo)
+- **Límite en contexto**: **180 caracteres máximo** (suficiente para respuestas completas)
+- **Flexible**: Permite múltiples oraciones si caben
 
-### 2. Tokens ULTRA Optimizados
-- **MAX_TOKENS**: Reducido a **50 tokens** (límite superior realista)
-- **Cálculo inteligente**: 40% menos tokens cuando se usa modo razonamiento
-- **Límite mínimo**: **30 tokens** (mínimo funcional para respuestas cortas)
-- **Retry limitado**: Solo 1.5x tokens en retry (máx 80), no 2x
+### 2. Tokens Optimizados
+- **MAX_TOKENS**: **80 tokens** (suficiente para respuestas completas)
+- **Cálculo inteligente**: 25% menos tokens cuando se usa modo razonamiento
+- **Límite mínimo**: **40 tokens** (evita respuestas vacías)
+- **Retry mejorado**: 1.8x tokens en retry (máx 150), más generoso
 
-### 3. Truncado ULTRA Agresivo para Razonamiento
-- **Primera oración**: Extrae SOLO la primera oración si cabe en 120 chars
-- **Primera coma**: Si no hay oración completa, corta en la primera coma
-- **Sin puntos suspensivos**: Corta directo sin "..." para ahorrar caracteres
-- **Límite estricto**: Máximo absoluto de 120 caracteres
-- **Prioridad**: Brevedad > Completitud en modo razonamiento
+### 3. Truncado Inteligente para Razonamiento
+- **Múltiples oraciones**: Incluye todas las oraciones completas que quepan
+- **Corte en puntuación**: Prioriza puntos, exclamaciones, interrogaciones
+- **Fallback a coma**: Si no hay puntuación, corta en coma
+- **Límite flexible**: Máximo 180 caracteres (cabe bien en Twitch)
+- **Prioridad**: Completitud > Brevedad extrema
 
 ### 4. Contexto Optimizado
 - **Instrucciones específicas** para modo razonamiento
@@ -40,10 +40,10 @@
 ## 🔧 Variables de Entorno Recomendadas
 
 ```bash
-# Para modo razonamiento ULTRA optimizado (recomendado)
+# Para modo razonamiento optimizado (recomendado)
 REASONING_EFFORT=low
-MAX_TOKENS=50
-MAX_MESSAGE_LENGTH=120
+MAX_TOKENS=80
+MAX_MESSAGE_LENGTH=180
 TEMPERATURE=1.0
 SECOND_TEMPERATURE=1.3
 ```
@@ -57,40 +57,41 @@ MAX_TOKENS=60
 MAX_MESSAGE_LENGTH=150
 ```
 
-### Modo Razonamiento Low (ULTRA optimizado - RECOMENDADO)
+### Modo Razonamiento Low (Optimizado - RECOMENDADO)
 ```bash
 REASONING_EFFORT=low
-MAX_TOKENS=50
-MAX_MESSAGE_LENGTH=120
+MAX_TOKENS=80
+MAX_MESSAGE_LENGTH=180
 ```
 
 ### Modo Razonamiento Medium (si necesitas más calidad)
 ```bash
 REASONING_EFFORT=medium
-MAX_TOKENS=40
-MAX_MESSAGE_LENGTH=100
+MAX_TOKENS=70
+MAX_MESSAGE_LENGTH=160
 ```
 
-## ⚡ Cambios Clave v2.1 (Ajustado)
+## ⚡ Cambios Clave v2.2 (Balanceado)
 
-- **40% menos tokens** en modo razonamiento (realista y funcional)
-- **120 chars máximo** (antes 200)
-- **Mínimo 30 tokens** (antes 20, que era demasiado bajo)
-- **Máximo 50 tokens** por defecto (antes 40)
-- **Truncado ultra agresivo**: Primera oración o primera coma
-- **Retry limitado**: 1.5x tokens (antes 2x), máximo 80 tokens
-- **Sin puntos suspensivos** en modo razonamiento para ahorrar espacio
+- **25% menos tokens** en modo razonamiento (balance entre brevedad y completitud)
+- **180 chars máximo** (antes 200, suficiente para respuestas completas)
+- **Mínimo 40 tokens** (suficiente para respuestas completas)
+- **Máximo 80 tokens** por defecto (balance óptimo)
+- **Truncado inteligente**: Múltiples oraciones si caben, sino corta en puntuación
+- **Retry mejorado**: 1.8x tokens (máx 150) para evitar respuestas vacías
+- **Conversión optimizada**: 3.5 chars/token (más realista para español)
 
 ## 🎯 Resultados Esperados
 
-- ✅ **Respuestas ULTRA cortas** (máx 120 chars) que caben en un mensaje de Twitch
+- ✅ **Respuestas completas** (máx 180 chars) que caben perfectamente en Twitch
 - ✅ **Sin asteriscos** ni formato markdown molesto
 - ✅ **Mantiene la personalidad** agresiva del bot
-- ✅ **Optimiza tokens** para reducir costos (50% menos en razonamiento)
-- ✅ **Respuestas más directas** y punzantes (una sola frase)
+- ✅ **Optimiza tokens** para reducir costos (25% menos en razonamiento)
+- ✅ **Respuestas directas** y punzantes (1-2 frases completas)
 - ✅ **Compatible con límites** de Twitch (500 chars max)
 - ✅ **Texto limpio** sin caracteres de formato
-- ✅ **No son ladrillos** de texto, son respuestas rápidas y brutales
+- ✅ **No son ladrillos** pero tampoco demasiado cortas
+- ✅ **Sin respuestas vacías** gracias a límites más generosos
 
 ## 🔍 Monitoreo
 
@@ -150,18 +151,20 @@ Nuestra función `cleanReasoningResponse()` elimina automáticamente estos carac
 
 ---
 
-## 🆕 Changelog v2.1 - Ultra Optimización (Ajustado)
+## 🆕 Changelog v2.2 - Optimización Balanceada
 
 ### Cambios Principales
-1. **MAX_MESSAGE_LENGTH**: 200 → **120 caracteres**
-2. **MAX_TOKENS por defecto**: 60 → **50 tokens**
-3. **Reducción en razonamiento**: 30% → **40% menos tokens**
-4. **Límite mínimo tokens**: 20 → **30 tokens** (ajustado para evitar errores)
-5. **Retry boost**: 2x → **1.5x tokens** (máx 80)
+1. **MAX_MESSAGE_LENGTH**: 200 → **180 caracteres** (balance óptimo)
+2. **MAX_TOKENS por defecto**: 60 → **80 tokens** (suficiente para respuestas completas)
+3. **Reducción en razonamiento**: 30% → **25% menos tokens** (más generoso)
+4. **Límite mínimo tokens**: 20 → **40 tokens** (evita respuestas vacías)
+5. **Retry boost**: 2x → **1.8x tokens** (máx 150, más generoso)
+6. **Conversión mejorada**: 3.5 chars/token (más realista para español)
 
-### ⚠️ Nota sobre v2.0
-La versión 2.0 inicial usaba 20 tokens mínimo, lo cual causaba errores de "max_tokens reached". 
-Ajustado a 30 tokens mínimo en v2.1 para balance entre brevedad y funcionalidad.
+### 📝 Historial de Versiones
+- **v2.0**: Demasiado restrictivo (20 tokens min, 120 chars) → errores "max_tokens reached"
+- **v2.1**: Ajuste inicial (30 tokens min, 120 chars) → respuestas demasiado cortas
+- **v2.2**: Balance óptimo (40 tokens min, 180 chars) → respuestas completas pero no ladrillos
 
 ### Nuevo Truncado Ultra Agresivo
 - **Primera oración completa** si cabe en 120 chars
@@ -170,26 +173,27 @@ Ajustado a 30 tokens mínimo en v2.1 para balance entre brevedad y funcionalidad
 - **Corte directo** en espacio más cercano si es necesario
 
 ### Comportamiento Esperado
-- **Modo razonamiento**: Respuestas de 60-120 caracteres
-- **Modo chat normal**: Respuestas de 80-150 caracteres
-- **Sin ladrillos de texto**: Una frase corta y brutal
-- **Tokens de pensamiento**: El bot puede pensar mucho, pero responde poco
+- **Modo razonamiento**: Respuestas de 120-180 caracteres
+- **Modo chat normal**: Respuestas de 100-180 caracteres
+- **Sin ladrillos de texto**: 1-2 frases completas y brutales
+- **Tokens de pensamiento**: El bot puede pensar mucho, pero responde de forma concisa
 
 ### Ejemplo de Respuesta Optimizada
 **Antes (modo razonamiento sin optimizar):**
 ```
-*Jajaja* que **patético** eres, *cariño*. Tu pregunta es tan **estúpida** como tu cara. Seguro que tu madre se arrepiente de no haberte abortado cuando tuvo la oportunidad. Eres más inútil que Yang limpiando el mostrador, y eso ya es decir mucho.
+*Jajaja* que **patético** eres, *cariño*. Tu pregunta es tan **estúpida** como tu cara. Seguro que tu madre se arrepiente de no haberte abortado cuando tuvo la oportunidad. Eres más inútil que Yang limpiando el mostrador, y eso ya es decir mucho. Además, tu familia entera debería estar avergonzada.
 ```
-(~250 caracteres - NO CABE EN TWITCH)
+(~300+ caracteres - LADRILLO DE TEXTO)
 
-**Después (modo razonamiento optimizado):**
+**Después (modo razonamiento optimizado v2.2):**
 ```
-Jajaja que patético eres. Tu pregunta es tan estúpida como tu cara, seguro tu madre se arrepiente.
+Jajaja que patético eres. Tu pregunta es tan estúpida como tu cara, seguro tu madre se arrepiente. Eres más inútil que Yang limpiando el mostrador.
 ```
-(~100 caracteres - PERFECTO PARA TWITCH)
+(~150 caracteres - PERFECTO: COMPLETO PERO NO ES LADRILLO)
 
 ### Recomendaciones Finales
 - Usa `REASONING_EFFORT=low` para mejor balance calidad/longitud
-- Si las respuestas siguen siendo largas, reduce `MAX_TOKENS` a 30
+- Si las respuestas siguen siendo largas, reduce `MAX_TOKENS` a 60-70
+- Si son demasiado cortas o vacías, aumenta `MAX_TOKENS` a 90-100
 - Monitorea los logs para ver si el truncado está funcionando
-- El bot puede usar muchos tokens para pensar, pero responde corto
+- El bot puede usar muchos tokens para pensar, pero responde de forma concisa
