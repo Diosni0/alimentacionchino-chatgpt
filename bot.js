@@ -151,17 +151,17 @@ export class TwitchBot {
 
     // Calculate a safe max tokens budget based on configured char limit
     calculateMaxTokens() {
-        const charLimit = BOT_CONFIG.MAX_MESSAGE_LENGTH || 200;
+        const charLimit = BOT_CONFIG.MAX_MESSAGE_LENGTH || 120;
         // Approx conversion: ~4 chars per token for ES/EN average, add safety margin
         let estimatedTokens = Math.ceil(charLimit / 4);
         
-        // Si estamos usando modo razonamiento, ser más restrictivo
+        // Si estamos usando modo razonamiento, ser MUY restrictivo
         if (this.isUsingReasoning()) {
-            estimatedTokens = Math.ceil(estimatedTokens * 0.7); // 30% menos tokens para razonamiento
+            estimatedTokens = Math.ceil(estimatedTokens * 0.5); // 50% menos tokens para razonamiento
         }
         
-        const upperBound = OPENAI_CONFIG.MAX_TOKENS || 60;
-        const lowerBound = 30; // Más bajo para forzar respuestas cortas
+        const upperBound = OPENAI_CONFIG.MAX_TOKENS || 40;
+        const lowerBound = 20; // Muy bajo para forzar respuestas ultra cortas
         return Math.max(lowerBound, Math.min(estimatedTokens, upperBound));
     }
 
@@ -237,10 +237,10 @@ export class TwitchBot {
         // Try to extract content
         let { content, finish_reason } = this.extractChoice(response);
 
-        // If empty content due to length, retry with higher budget
+        // If empty content due to length, retry with slightly higher budget (pero no mucho)
         if ((!content || content.length === 0) && finish_reason === 'length') {
             console.log('[bot] Empty response due to length. Retrying with higher token budget...');
-            const boostedTokens = Math.min((OPENAI_CONFIG.MAX_TOKENS || maxTokens) * 2, 500);
+            const boostedTokens = Math.min((OPENAI_CONFIG.MAX_TOKENS || maxTokens) * 1.5, 80);
             const retryConfig = {
                 model,
                 messages,
@@ -264,7 +264,7 @@ export class TwitchBot {
                 model,
                 messages,
                 temperature: fallbackTemp,
-                max_completion_tokens: Math.min((OPENAI_CONFIG.MAX_TOKENS || maxTokens) * 2, 500),
+                max_completion_tokens: Math.min((OPENAI_CONFIG.MAX_TOKENS || maxTokens) * 1.5, 80),
                 top_p: fallbackTopP,
                 reasoning_effort: OPENAI_CONFIG.REASONING_EFFORT
             };
@@ -411,17 +411,32 @@ export class TwitchBot {
         }
     }
 
-    truncateResponse(text, maxLength = BOT_CONFIG.MAX_MESSAGE_LENGTH || 200) {
+    truncateResponse(text, maxLength = BOT_CONFIG.MAX_MESSAGE_LENGTH || 120) {
         if (text.length <= maxLength) return text;
 
-        // Para respuestas muy largas del modo razonamiento, buscar el primer punto o coma
-        if (text.length > maxLength * 2) {
+        // Para modo razonamiento, ser ULTRA agresivo con el truncado
+        if (this.isUsingReasoning()) {
+            // Buscar la primera oración completa que quepa
             const firstSentence = text.match(/^[^.!?]*[.!?]/);
             if (firstSentence && firstSentence[0].length <= maxLength) {
                 return firstSentence[0].trim();
             }
+            
+            // Si no hay oración completa, buscar primera coma
+            const firstComma = text.indexOf(',');
+            if (firstComma > 0 && firstComma <= maxLength) {
+                return text.substring(0, firstComma).trim();
+            }
+            
+            // Último recurso: cortar en espacio más cercano
+            const truncated = text.substring(0, maxLength - 3);
+            const lastSpace = truncated.lastIndexOf(' ');
+            return lastSpace > maxLength * 0.6 ?
+                truncated.substring(0, lastSpace) :
+                truncated.substring(0, maxLength - 3);
         }
 
+        // Para modo normal, truncado estándar
         const truncated = text.substring(0, maxLength - 3);
         const lastSpace = truncated.lastIndexOf(' ');
         const lastPunctuation = Math.max(

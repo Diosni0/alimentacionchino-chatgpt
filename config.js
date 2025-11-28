@@ -42,7 +42,7 @@ export const OPENAI_CONFIG = {
         const raw = process.env.MAX_TOKENS
             || process.env.MAX_COMPLETION_TOKENS
             || process.env.max_completion_tokens;
-        return parseInteger(raw, 60); // Reducido para respuestas más cortas
+        return parseInteger(raw, 40); // Ultra reducido para respuestas muy cortas
     })(),
     TOP_P: parseFloatOrDefault(process.env.TOP_P, 1.0),
     FREQUENCY_PENALTY: parseFloatOrDefault(process.env.FREQUENCY_PENALTY, 0.5),
@@ -68,7 +68,7 @@ export const BOT_CONFIG = {
     ENABLE_TTS: parseBoolean(process.env.ENABLE_TTS, false),
     ENABLE_CHANNEL_POINTS: parseBoolean(process.env.ENABLE_CHANNEL_POINTS, false),
     COOLDOWN_DURATION: parseInteger(process.env.COOLDOWN_DURATION, 10),
-    MAX_MESSAGE_LENGTH: parseInteger(process.env.MAX_MESSAGE_LENGTH, 200) // Reducido para Twitch
+    MAX_MESSAGE_LENGTH: parseInteger(process.env.MAX_MESSAGE_LENGTH, 120) // Ultra reducido para respuestas cortas
 };
 
 export const SERVER_CONFIG = {

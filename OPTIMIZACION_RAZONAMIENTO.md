@@ -7,19 +7,23 @@
 
 ## ✅ Soluciones Implementadas
 
-### 1. Límites de Caracteres Reducidos
-- **MAX_MESSAGE_LENGTH**: Reducido de 450 a **200 caracteres**
-- **Límite en contexto**: Reducido de 150 a **120 caracteres máximo**
+### 1. Límites de Caracteres ULTRA Reducidos
+- **MAX_MESSAGE_LENGTH**: Reducido a **120 caracteres** (límite crítico)
+- **Límite en contexto**: **120 caracteres máximo absoluto**
+- **Sin excepciones**: Modo razonamiento fuerza respuestas aún más cortas
 
-### 2. Tokens Optimizados
-- **MAX_TOKENS**: Reducido de 200 a **60 tokens**
-- **Cálculo inteligente**: 30% menos tokens cuando se usa modo razonamiento
-- **Límite mínimo**: Reducido a 30 tokens para forzar brevedad
+### 2. Tokens ULTRA Optimizados
+- **MAX_TOKENS**: Reducido a **40 tokens** (límite superior)
+- **Cálculo inteligente**: 50% menos tokens cuando se usa modo razonamiento
+- **Límite mínimo**: Reducido a **20 tokens** para forzar brevedad extrema
+- **Retry limitado**: Solo 1.5x tokens en retry (máx 80), no 2x
 
-### 3. Truncado Inteligente
-- **Corte por puntuación**: Prioriza cortar en puntos, comas o exclamaciones
-- **Primera oración**: Para respuestas muy largas, extrae solo la primera oración completa
-- **Límite estricto**: Máximo absoluto de 200 caracteres
+### 3. Truncado ULTRA Agresivo para Razonamiento
+- **Primera oración**: Extrae SOLO la primera oración si cabe en 120 chars
+- **Primera coma**: Si no hay oración completa, corta en la primera coma
+- **Sin puntos suspensivos**: Corta directo sin "..." para ahorrar caracteres
+- **Límite estricto**: Máximo absoluto de 120 caracteres
+- **Prioridad**: Brevedad > Completitud en modo razonamiento
 
 ### 4. Contexto Optimizado
 - **Instrucciones específicas** para modo razonamiento
@@ -36,10 +40,10 @@
 ## 🔧 Variables de Entorno Recomendadas
 
 ```bash
-# Para modo razonamiento optimizado
+# Para modo razonamiento ULTRA optimizado (recomendado)
 REASONING_EFFORT=low
-MAX_TOKENS=60
-MAX_MESSAGE_LENGTH=200
+MAX_TOKENS=40
+MAX_MESSAGE_LENGTH=120
 TEMPERATURE=1.0
 SECOND_TEMPERATURE=1.3
 ```
@@ -49,33 +53,42 @@ SECOND_TEMPERATURE=1.3
 ### Modo Chat Normal (sin razonamiento)
 ```bash
 REASONING_EFFORT=none
-MAX_TOKENS=80
-MAX_MESSAGE_LENGTH=250
+MAX_TOKENS=60
+MAX_MESSAGE_LENGTH=150
 ```
 
-### Modo Razonamiento Low (optimizado)
+### Modo Razonamiento Low (ULTRA optimizado - RECOMENDADO)
 ```bash
 REASONING_EFFORT=low
-MAX_TOKENS=60
-MAX_MESSAGE_LENGTH=200
+MAX_TOKENS=40
+MAX_MESSAGE_LENGTH=120
 ```
 
 ### Modo Razonamiento Medium (si necesitas más calidad)
 ```bash
 REASONING_EFFORT=medium
-MAX_TOKENS=50
-MAX_MESSAGE_LENGTH=180
+MAX_TOKENS=30
+MAX_MESSAGE_LENGTH=100
 ```
+
+## ⚡ Cambios Clave v2.0
+
+- **50% menos tokens** en modo razonamiento (antes 30%)
+- **120 chars máximo** (antes 200)
+- **Truncado ultra agresivo**: Primera oración o primera coma
+- **Retry limitado**: 1.5x tokens (antes 2x), máximo 80 tokens
+- **Sin puntos suspensivos** en modo razonamiento para ahorrar espacio
 
 ## 🎯 Resultados Esperados
 
-- ✅ **Respuestas completas** sin cortes en Twitch
+- ✅ **Respuestas ULTRA cortas** (máx 120 chars) que caben en un mensaje de Twitch
 - ✅ **Sin asteriscos** ni formato markdown molesto
 - ✅ **Mantiene la personalidad** agresiva del bot
-- ✅ **Optimiza tokens** para reducir costos
-- ✅ **Respuestas más directas** y punzantes
+- ✅ **Optimiza tokens** para reducir costos (50% menos en razonamiento)
+- ✅ **Respuestas más directas** y punzantes (una sola frase)
 - ✅ **Compatible con límites** de Twitch (500 chars max)
 - ✅ **Texto limpio** sin caracteres de formato
+- ✅ **No son ladrillos** de texto, son respuestas rápidas y brutales
 
 ## 🔍 Monitoreo
 
@@ -131,3 +144,46 @@ El modo de razonamiento de GPT-5.1 tiene tendencia a usar asteriscos excesivamen
 - **Formato**: Intenta usar markdown en respuestas de chat
 
 Nuestra función `cleanReasoningResponse()` elimina automáticamente estos caracteres para que las respuestas sean más naturales en Twitch.
+
+
+---
+
+## 🆕 Changelog v2.0 - Ultra Optimización
+
+### Cambios Principales
+1. **MAX_MESSAGE_LENGTH**: 200 → **120 caracteres**
+2. **MAX_TOKENS por defecto**: 60 → **40 tokens**
+3. **Reducción en razonamiento**: 30% → **50% menos tokens**
+4. **Límite mínimo tokens**: 30 → **20 tokens**
+5. **Retry boost**: 2x → **1.5x tokens** (máx 80)
+
+### Nuevo Truncado Ultra Agresivo
+- **Primera oración completa** si cabe en 120 chars
+- **Primera coma** si no hay oración completa
+- **Sin puntos suspensivos** en modo razonamiento
+- **Corte directo** en espacio más cercano si es necesario
+
+### Comportamiento Esperado
+- **Modo razonamiento**: Respuestas de 60-120 caracteres
+- **Modo chat normal**: Respuestas de 80-150 caracteres
+- **Sin ladrillos de texto**: Una frase corta y brutal
+- **Tokens de pensamiento**: El bot puede pensar mucho, pero responde poco
+
+### Ejemplo de Respuesta Optimizada
+**Antes (modo razonamiento sin optimizar):**
+```
+*Jajaja* que **patético** eres, *cariño*. Tu pregunta es tan **estúpida** como tu cara. Seguro que tu madre se arrepiente de no haberte abortado cuando tuvo la oportunidad. Eres más inútil que Yang limpiando el mostrador, y eso ya es decir mucho.
+```
+(~250 caracteres - NO CABE EN TWITCH)
+
+**Después (modo razonamiento optimizado):**
+```
+Jajaja que patético eres. Tu pregunta es tan estúpida como tu cara, seguro tu madre se arrepiente.
+```
+(~100 caracteres - PERFECTO PARA TWITCH)
+
+### Recomendaciones Finales
+- Usa `REASONING_EFFORT=low` para mejor balance calidad/longitud
+- Si las respuestas siguen siendo largas, reduce `MAX_TOKENS` a 30
+- Monitorea los logs para ver si el truncado está funcionando
+- El bot puede usar muchos tokens para pensar, pero responde corto
