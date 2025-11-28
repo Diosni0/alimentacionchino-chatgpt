@@ -3,12 +3,13 @@
 ## 🎯 Problema Resuelto
 El bot en modo razonamiento generaba respuestas demasiado largas (200+ caracteres) que no cabían bien en Twitch.
 
-## ✅ Solución Implementada
+## ✅ Solución Implementada (v2.1)
 
 ### 1. Límites Más Estrictos
 - **MAX_MESSAGE_LENGTH**: 120 caracteres (antes 200)
-- **MAX_TOKENS**: 40 tokens (antes 60)
-- **Reducción en razonamiento**: 50% menos tokens (antes 30%)
+- **MAX_TOKENS**: 50 tokens (antes 60)
+- **Reducción en razonamiento**: 40% menos tokens (antes 30%)
+- **Mínimo tokens**: 30 (ajustado desde 20 para evitar errores)
 
 ### 2. Truncado Ultra Agresivo
 El bot ahora corta las respuestas de forma más inteligente:
@@ -32,15 +33,18 @@ npm start
 ### Opción 2: Configurar manualmente
 Si quieres ajustar más, edita tu archivo `.env`:
 ```bash
-# Para respuestas ULTRA cortas
+# Para respuestas ULTRA cortas (recomendado)
 MAX_MESSAGE_LENGTH=120
-MAX_TOKENS=40
+MAX_TOKENS=50
 REASONING_EFFORT=low
 
-# Si siguen siendo largas, reduce más
+# Si siguen siendo largas, reduce más (pero no menos de 30 tokens)
 MAX_MESSAGE_LENGTH=100
-MAX_TOKENS=30
+MAX_TOKENS=40
 ```
+
+### ⚠️ Importante
+No uses menos de 30 tokens o el bot dará error "max_tokens reached".
 
 ## 📊 Resultados Esperados
 
@@ -79,10 +83,17 @@ Jajaja que patético eres. Tu pregunta es tan estúpida como tu cara.
 
 ## 🐛 Si Siguen Siendo Largas
 
-1. Reduce `MAX_TOKENS` a 30 en tu `.env`
+1. Reduce `MAX_TOKENS` a 40 en tu `.env` (no menos de 30)
 2. Reduce `MAX_MESSAGE_LENGTH` a 100
 3. Verifica que `REASONING_EFFORT=low` (no `medium` o `high`)
 4. Revisa los logs para ver si el truncado está funcionando
+
+## ⚠️ Si Recibes Error "max_tokens reached"
+
+Esto significa que los tokens son demasiado bajos. Aumenta `MAX_TOKENS`:
+```bash
+MAX_TOKENS=50  # o 60 si sigue fallando
+```
 
 ## 📝 Archivos Modificados
 

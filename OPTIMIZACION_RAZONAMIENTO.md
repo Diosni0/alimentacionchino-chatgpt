@@ -13,9 +13,9 @@
 - **Sin excepciones**: Modo razonamiento fuerza respuestas aún más cortas
 
 ### 2. Tokens ULTRA Optimizados
-- **MAX_TOKENS**: Reducido a **40 tokens** (límite superior)
-- **Cálculo inteligente**: 50% menos tokens cuando se usa modo razonamiento
-- **Límite mínimo**: Reducido a **20 tokens** para forzar brevedad extrema
+- **MAX_TOKENS**: Reducido a **50 tokens** (límite superior realista)
+- **Cálculo inteligente**: 40% menos tokens cuando se usa modo razonamiento
+- **Límite mínimo**: **30 tokens** (mínimo funcional para respuestas cortas)
 - **Retry limitado**: Solo 1.5x tokens en retry (máx 80), no 2x
 
 ### 3. Truncado ULTRA Agresivo para Razonamiento
@@ -42,7 +42,7 @@
 ```bash
 # Para modo razonamiento ULTRA optimizado (recomendado)
 REASONING_EFFORT=low
-MAX_TOKENS=40
+MAX_TOKENS=50
 MAX_MESSAGE_LENGTH=120
 TEMPERATURE=1.0
 SECOND_TEMPERATURE=1.3
@@ -60,21 +60,23 @@ MAX_MESSAGE_LENGTH=150
 ### Modo Razonamiento Low (ULTRA optimizado - RECOMENDADO)
 ```bash
 REASONING_EFFORT=low
-MAX_TOKENS=40
+MAX_TOKENS=50
 MAX_MESSAGE_LENGTH=120
 ```
 
 ### Modo Razonamiento Medium (si necesitas más calidad)
 ```bash
 REASONING_EFFORT=medium
-MAX_TOKENS=30
+MAX_TOKENS=40
 MAX_MESSAGE_LENGTH=100
 ```
 
-## ⚡ Cambios Clave v2.0
+## ⚡ Cambios Clave v2.1 (Ajustado)
 
-- **50% menos tokens** en modo razonamiento (antes 30%)
+- **40% menos tokens** en modo razonamiento (realista y funcional)
 - **120 chars máximo** (antes 200)
+- **Mínimo 30 tokens** (antes 20, que era demasiado bajo)
+- **Máximo 50 tokens** por defecto (antes 40)
 - **Truncado ultra agresivo**: Primera oración o primera coma
 - **Retry limitado**: 1.5x tokens (antes 2x), máximo 80 tokens
 - **Sin puntos suspensivos** en modo razonamiento para ahorrar espacio
@@ -148,14 +150,18 @@ Nuestra función `cleanReasoningResponse()` elimina automáticamente estos carac
 
 ---
 
-## 🆕 Changelog v2.0 - Ultra Optimización
+## 🆕 Changelog v2.1 - Ultra Optimización (Ajustado)
 
 ### Cambios Principales
 1. **MAX_MESSAGE_LENGTH**: 200 → **120 caracteres**
-2. **MAX_TOKENS por defecto**: 60 → **40 tokens**
-3. **Reducción en razonamiento**: 30% → **50% menos tokens**
-4. **Límite mínimo tokens**: 30 → **20 tokens**
+2. **MAX_TOKENS por defecto**: 60 → **50 tokens**
+3. **Reducción en razonamiento**: 30% → **40% menos tokens**
+4. **Límite mínimo tokens**: 20 → **30 tokens** (ajustado para evitar errores)
 5. **Retry boost**: 2x → **1.5x tokens** (máx 80)
+
+### ⚠️ Nota sobre v2.0
+La versión 2.0 inicial usaba 20 tokens mínimo, lo cual causaba errores de "max_tokens reached". 
+Ajustado a 30 tokens mínimo en v2.1 para balance entre brevedad y funcionalidad.
 
 ### Nuevo Truncado Ultra Agresivo
 - **Primera oración completa** si cabe en 120 chars

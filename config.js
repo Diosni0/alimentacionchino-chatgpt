@@ -42,7 +42,7 @@ export const OPENAI_CONFIG = {
         const raw = process.env.MAX_TOKENS
             || process.env.MAX_COMPLETION_TOKENS
             || process.env.max_completion_tokens;
-        return parseInteger(raw, 40); // Ultra reducido para respuestas muy cortas
+        return parseInteger(raw, 50); // Reducido pero realista para respuestas cortas
     })(),
     TOP_P: parseFloatOrDefault(process.env.TOP_P, 1.0),
     FREQUENCY_PENALTY: parseFloatOrDefault(process.env.FREQUENCY_PENALTY, 0.5),

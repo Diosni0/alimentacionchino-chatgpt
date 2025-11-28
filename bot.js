@@ -155,13 +155,13 @@ export class TwitchBot {
         // Approx conversion: ~4 chars per token for ES/EN average, add safety margin
         let estimatedTokens = Math.ceil(charLimit / 4);
         
-        // Si estamos usando modo razonamiento, ser MUY restrictivo
+        // Si estamos usando modo razonamiento, ser más restrictivo pero realista
         if (this.isUsingReasoning()) {
-            estimatedTokens = Math.ceil(estimatedTokens * 0.5); // 50% menos tokens para razonamiento
+            estimatedTokens = Math.ceil(estimatedTokens * 0.6); // 40% menos tokens para razonamiento
         }
         
-        const upperBound = OPENAI_CONFIG.MAX_TOKENS || 40;
-        const lowerBound = 20; // Muy bajo para forzar respuestas ultra cortas
+        const upperBound = OPENAI_CONFIG.MAX_TOKENS || 50;
+        const lowerBound = 30; // Mínimo realista para respuestas cortas
         return Math.max(lowerBound, Math.min(estimatedTokens, upperBound));
     }
 
