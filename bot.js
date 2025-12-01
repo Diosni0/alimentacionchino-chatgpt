@@ -155,11 +155,6 @@ export class TwitchBot {
         // Approx conversion: ~4 chars per token for ES/EN average, add safety margin
         let estimatedTokens = Math.ceil(charLimit / 3.5);
         
-        // Si estamos usando modo razonamiento, ser un poco más restrictivo
-        if (this.isUsingReasoning()) {
-            estimatedTokens = Math.ceil(estimatedTokens * 0.75); // 25% menos tokens para razonamiento
-        }
-        
         const upperBound = OPENAI_CONFIG.MAX_TOKENS || 80;
         const lowerBound = 40; // Mínimo para respuestas completas
         return Math.max(lowerBound, Math.min(estimatedTokens, upperBound));
@@ -177,8 +172,8 @@ export class TwitchBot {
 
     // Check if we're using reasoning mode
     isUsingReasoning() {
-        const reasoningEffort = OPENAI_CONFIG.REASONING_EFFORT || 'low';
-        return reasoningEffort !== 'none';
+        // Siempre retornar false - modo razonamiento deshabilitado
+        return false;
     }
 
     // Decide creativity per user: first time -> base params; subsequent -> higher temperature/top_p
@@ -186,12 +181,7 @@ export class TwitchBot {
         const key = this.getUserKey(username);
         const isFirst = !this.firstInteractionSeen.has(key);
 
-        // If using reasoning, force temperature to 1 (only supported value)
-        if (this.isUsingReasoning()) {
-            return { key, isFirst, temperature: 1, top_p: 1 };
-        }
-
-        // Normal chat mode - use configured values
+        // Chat mode - use configured values
         const temperature = isFirst ? OPENAI_CONFIG.TEMPERATURE : OPENAI_CONFIG.SECOND_TEMPERATURE;
         const top_p = isFirst ? OPENAI_CONFIG.TOP_P : OPENAI_CONFIG.SECOND_TOP_P;
         return { key, isFirst, temperature, top_p };
@@ -210,17 +200,15 @@ export class TwitchBot {
         const model = this.getModelForInteraction(sampling.isFirst);
 
         // Debug: Log what we're sending to OpenAI
-        const isReasoning = this.isUsingReasoning();
         console.log('[bot] Sending to OpenAI:', {
             model,
-            reasoningMode: isReasoning ? `YES (${OPENAI_CONFIG.REASONING_EFFORT})` : 'NO (chat mode)',
+            mode: 'chat (no reasoning)',
             systemMessage: messages[0].content.substring(0, 150) + '...',
             userMessage: text,
             historyLength: messages.length,
             maxTokens,
             temperature: sampling.temperature,
-            top_p: sampling.top_p,
-            reasoning_effort: OPENAI_CONFIG.REASONING_EFFORT
+            top_p: sampling.top_p
         });
 
         const config = {
@@ -228,8 +216,8 @@ export class TwitchBot {
             messages,
             temperature: sampling.temperature,
             max_completion_tokens: maxTokens,
-            top_p: sampling.top_p,
-            reasoning_effort: OPENAI_CONFIG.REASONING_EFFORT
+            top_p: sampling.top_p
+            // reasoning_effort removido - no usar modo razonamiento
         };
 
         let response = await this.openai.chat.completions.create(config);
@@ -246,8 +234,7 @@ export class TwitchBot {
                 messages,
                 temperature: sampling.temperature,
                 max_completion_tokens: boostedTokens,
-                top_p: sampling.top_p,
-                reasoning_effort: OPENAI_CONFIG.REASONING_EFFORT
+                top_p: sampling.top_p
             };
             response = await this.openai.chat.completions.create(retryConfig);
             ({ content, finish_reason } = this.extractChoice(response));
@@ -256,17 +243,15 @@ export class TwitchBot {
         // If still empty, fallback to a smaller temp/top_p to encourage concise output
         if (!content || content.length === 0) {
             console.log('[bot] Still empty after retry. Trying conservative sampling.');
-            // For reasoning models, we can't change temperature, so use original values
-            const fallbackTemp = this.isUsingReasoning() ? 1 : Math.max(0.7, sampling.temperature);
-            const fallbackTopP = this.isUsingReasoning() ? 1 : Math.min(0.95, sampling.top_p);
+            const fallbackTemp = Math.max(0.7, sampling.temperature);
+            const fallbackTopP = Math.min(0.95, sampling.top_p);
 
             const fallbackConfig = {
                 model,
                 messages,
                 temperature: fallbackTemp,
                 max_completion_tokens: Math.min((OPENAI_CONFIG.MAX_TOKENS || maxTokens) * 2, 150),
-                top_p: fallbackTopP,
-                reasoning_effort: OPENAI_CONFIG.REASONING_EFFORT
+                top_p: fallbackTopP
             };
             response = await this.openai.chat.completions.create(fallbackConfig);
             ({ content } = this.extractChoice(response));
@@ -279,10 +264,8 @@ export class TwitchBot {
 
         console.log('[bot] Got response:', content.substring(0, 100) + '...');
         
-        // Limpiar formato markdown si estamos usando modo razonamiento
-        if (this.isUsingReasoning()) {
-            content = this.cleanReasoningResponse(content);
-        }
+        // Limpiar formato markdown siempre (por si acaso)
+        content = this.cleanReasoningResponse(content);
         
         return this.truncateResponse(content);
     }
@@ -414,43 +397,33 @@ export class TwitchBot {
     truncateResponse(text, maxLength = BOT_CONFIG.MAX_MESSAGE_LENGTH || 180) {
         if (text.length <= maxLength) return text;
 
-        // Para modo razonamiento, truncado inteligente pero no ultra agresivo
-        if (this.isUsingReasoning()) {
-            // Intentar cortar en punto, exclamación o interrogación
-            const sentences = text.match(/[^.!?]+[.!?]+/g);
-            if (sentences && sentences.length > 0) {
-                let result = '';
-                for (const sentence of sentences) {
-                    if ((result + sentence).length <= maxLength) {
-                        result += sentence;
-                    } else {
-                        break;
-                    }
+        // Truncado inteligente: intentar cortar en punto, exclamación o interrogación
+        const sentences = text.match(/[^.!?]+[.!?]+/g);
+        if (sentences && sentences.length > 0) {
+            let result = '';
+            for (const sentence of sentences) {
+                if ((result + sentence).length <= maxLength) {
+                    result += sentence;
+                } else {
+                    break;
                 }
-                if (result.length > 0) return result.trim();
             }
-            
-            // Si no hay oraciones completas, buscar coma
-            const truncated = text.substring(0, maxLength - 3);
-            const lastComma = truncated.lastIndexOf(',');
-            if (lastComma > maxLength * 0.6) {
-                return truncated.substring(0, lastComma).trim();
-            }
-            
-            // Último recurso: cortar en espacio
-            const lastSpace = truncated.lastIndexOf(' ');
-            return lastSpace > maxLength * 0.7 ?
-                truncated.substring(0, lastSpace) :
-                truncated.substring(0, maxLength - 3);
+            if (result.length > 0) return result.trim();
         }
-
-        // Para modo normal, truncado estándar
+        
+        // Si no hay oraciones completas, buscar coma
         const truncated = text.substring(0, maxLength - 3);
+        const lastComma = truncated.lastIndexOf(',');
+        if (lastComma > maxLength * 0.6) {
+            return truncated.substring(0, lastComma).trim();
+        }
+        
+        // Último recurso: cortar en espacio
         const lastSpace = truncated.lastIndexOf(' ');
         const lastPunctuation = Math.max(
             truncated.lastIndexOf('.'),
-            truncated.lastIndexOf(','),
-            truncated.lastIndexOf('!')
+            truncated.lastIndexOf('!'),
+            truncated.lastIndexOf('?')
         );
 
         // Priorizar cortar en puntuación si está cerca del final
@@ -458,9 +431,9 @@ export class TwitchBot {
             return truncated.substring(0, lastPunctuation + 1);
         }
 
-        return lastSpace > maxLength * 0.8 ?
-            truncated.substring(0, lastSpace) + '...' :
-            truncated + '...';
+        return lastSpace > maxLength * 0.7 ?
+            truncated.substring(0, lastSpace) :
+            truncated.substring(0, maxLength - 3);
     }
 
     async sendMessage(channel, message) {

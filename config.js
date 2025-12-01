@@ -48,7 +48,7 @@ export const OPENAI_CONFIG = {
     FREQUENCY_PENALTY: parseFloatOrDefault(process.env.FREQUENCY_PENALTY, 0.5),
     PRESENCE_PENALTY: parseFloatOrDefault(process.env.PRESENCE_PENALTY, 0.0),
     HISTORY_LENGTH: parseInteger(process.env.HISTORY_LENGTH, 5),
-    REASONING_EFFORT: process.env.REASONING_EFFORT || 'low'
+    REASONING_EFFORT: 'none' // Deshabilitado: no usar modo razonamiento
 };
 
 export const TWITCH_CONFIG = {
@@ -77,15 +77,10 @@ export const SERVER_CONFIG = {
 
 export const getFileContext = () => {
     try {
-        // Try to load TOON format first (use raw content as prompt)
-        if (fs.existsSync('./file_context.toon')) {
-            return fs.readFileSync('./file_context.toon', 'utf8');
-        }
-
-        // Fallback to original text format
+        // Solo usar el archivo .txt
         return fs.readFileSync('./file_context.txt', 'utf8');
     } catch (error) {
-        console.warn('Could not read context files, using default context');
+        console.warn('Could not read file_context.txt, using default context');
         return 'You are a helpful Twitch Chatbot.';
     }
 };
