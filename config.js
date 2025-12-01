@@ -33,8 +33,8 @@ const parseStringList = (value, defaultValue) => {
 
 export const OPENAI_CONFIG = {
     API_KEY: process.env.OPENAI_API_KEY || '',
-    MODEL_NAME: process.env.MODEL_NAME || 'gpt-4o',
-    FIRST_CHAT_MODEL: process.env.FIRST_CHAT_MODEL || 'gpt-4o',
+    MODEL_NAME: process.env.MODEL_NAME || 'gpt-5.1', // GPT-5.1 sin razonamiento
+    FIRST_CHAT_MODEL: process.env.FIRST_CHAT_MODEL || 'gpt-5.1', // GPT-5.1 sin razonamiento
     TEMPERATURE: parseFloatOrDefault(process.env.TEMPERATURE, 1.0),
     SECOND_TEMPERATURE: parseFloatOrDefault(process.env.SECOND_TEMPERATURE, 1.3),
     SECOND_TOP_P: parseFloatOrDefault(process.env.SECOND_TOP_P, 1.0),
