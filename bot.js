@@ -16,8 +16,6 @@ export class TwitchBot {
         this.subscribers = new Set();
         this.moderators = new Set();
         this.userCooldowns = new Map();
-        // Track first interaction per user
-        this.firstInteractionSeen = new Set();
 
         // Intelligent caching
         this.cache = new Map();
@@ -160,31 +158,9 @@ export class TwitchBot {
         return Math.max(lowerBound, Math.min(estimatedTokens, upperBound));
     }
 
-    getUserKey(username) {
-        return (username || '__external__').toLowerCase();
-    }
-
-    getModelForInteraction(isFirstInteraction) {
-        const primaryModel = OPENAI_CONFIG.MODEL_NAME || OPENAI_CONFIG.FIRST_CHAT_MODEL;
-        const firstModel = OPENAI_CONFIG.FIRST_CHAT_MODEL || primaryModel;
-        return isFirstInteraction ? firstModel : primaryModel;
-    }
-
     // Check if we're using reasoning mode
     isUsingReasoning() {
-        // Siempre retornar false - modo razonamiento deshabilitado
-        return false;
-    }
-
-    // Decide creativity per user: first time -> base params; subsequent -> higher temperature/top_p
-    getSamplingParamsForUser(username) {
-        const key = this.getUserKey(username);
-        const isFirst = !this.firstInteractionSeen.has(key);
-
-        // Chat mode - use configured values
-        const temperature = isFirst ? OPENAI_CONFIG.TEMPERATURE : OPENAI_CONFIG.SECOND_TEMPERATURE;
-        const top_p = isFirst ? OPENAI_CONFIG.TOP_P : OPENAI_CONFIG.SECOND_TOP_P;
-        return { key, isFirst, temperature, top_p };
+        return OPENAI_CONFIG.REASONING_EFFORT && OPENAI_CONFIG.REASONING_EFFORT !== 'none';
     }
 
     async generateResponse(text, username) {
@@ -195,30 +171,30 @@ export class TwitchBot {
 
         const messages = [...this.chatHistory, { role: 'user', content: text }];
         const maxTokens = this.calculateMaxTokens();
-        const sampling = this.getSamplingParamsForUser(username);
-        this.firstInteractionSeen.add(sampling.key);
-        const model = this.getModelForInteraction(sampling.isFirst);
 
         // Debug: Log what we're sending to OpenAI
         console.log('[bot] Sending to OpenAI:', {
-            model,
-            mode: 'chat (no reasoning)',
+            model: OPENAI_CONFIG.MODEL_NAME,
             systemMessage: messages[0].content.substring(0, 150) + '...',
             userMessage: text,
             historyLength: messages.length,
             maxTokens,
-            temperature: sampling.temperature,
-            top_p: sampling.top_p
+            temperature: OPENAI_CONFIG.TEMPERATURE,
+            top_p: OPENAI_CONFIG.TOP_P
         });
 
         const config = {
-            model,
+            model: OPENAI_CONFIG.MODEL_NAME,
             messages,
-            temperature: sampling.temperature,
+            temperature: OPENAI_CONFIG.TEMPERATURE,
             max_completion_tokens: maxTokens,
-            top_p: sampling.top_p
-            // reasoning_effort removido - no usar modo razonamiento
+            top_p: OPENAI_CONFIG.TOP_P
         };
+
+        // Add reasoning_effort if using reasoning mode
+        if (this.isUsingReasoning()) {
+            config.reasoning_effort = OPENAI_CONFIG.REASONING_EFFORT;
+        }
 
         let response = await this.openai.chat.completions.create(config);
 
@@ -230,11 +206,11 @@ export class TwitchBot {
             console.log('[bot] Empty response due to length. Retrying with higher token budget...');
             const boostedTokens = Math.min((OPENAI_CONFIG.MAX_TOKENS || maxTokens) * 1.8, 150);
             const retryConfig = {
-                model,
+                model: OPENAI_CONFIG.MODEL_NAME,
                 messages,
-                temperature: sampling.temperature,
+                temperature: OPENAI_CONFIG.TEMPERATURE,
                 max_completion_tokens: boostedTokens,
-                top_p: sampling.top_p
+                top_p: OPENAI_CONFIG.TOP_P
             };
             response = await this.openai.chat.completions.create(retryConfig);
             ({ content, finish_reason } = this.extractChoice(response));
@@ -243,15 +219,12 @@ export class TwitchBot {
         // If still empty, fallback to a smaller temp/top_p to encourage concise output
         if (!content || content.length === 0) {
             console.log('[bot] Still empty after retry. Trying conservative sampling.');
-            const fallbackTemp = Math.max(0.7, sampling.temperature);
-            const fallbackTopP = Math.min(0.95, sampling.top_p);
-
             const fallbackConfig = {
-                model,
+                model: OPENAI_CONFIG.MODEL_NAME,
                 messages,
-                temperature: fallbackTemp,
-                max_completion_tokens: Math.min((OPENAI_CONFIG.MAX_TOKENS || maxTokens) * 2, 150),
-                top_p: fallbackTopP
+                temperature: Math.max(0.7, OPENAI_CONFIG.TEMPERATURE),
+                max_completion_tokens: Math.min(OPENAI_CONFIG.MAX_TOKENS * 2, 150),
+                top_p: Math.min(0.95, OPENAI_CONFIG.TOP_P)
             };
             response = await this.openai.chat.completions.create(fallbackConfig);
             ({ content } = this.extractChoice(response));

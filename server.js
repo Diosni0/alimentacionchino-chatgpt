@@ -13,7 +13,6 @@ console.log('­ƒÜÇ Starting Twitch AI Bot...');
 
 // Initialize Express app
 const app = express();
-app.set('view engine', 'ejs');
 app.use(express.json({ limit: '500kb' }));
 app.use('/public', express.static('public', { maxAge: '1d' }));
 
@@ -712,10 +711,7 @@ app.get('/static', (_, res) => {
     `);
 });
 
-// Keep old index for reference (optional)
-app.get('/old', (_, res) => {
-    res.render('pages/index');
-});
+
 
 // API endpoint with caching
 app.get('/gpt/:text', async (req, res) => {
@@ -832,14 +828,13 @@ app.get('/api/dashboard', (_, res) => {
                 metrics: botMetrics,
                 reasoning: {
                     enabled: reasoningEnabled,
-                    effort: process.env.REASONING_EFFORT || 'low'
+                    effort: OPENAI_CONFIG.REASONING_EFFORT
                 }
             },
             config: {
-                model: process.env.MODEL_NAME || 'gpt-4o',
-                firstChatModel: process.env.FIRST_CHAT_MODEL || process.env.MODEL_NAME || 'gpt-4o',
-                temperature: parseFloat(process.env.TEMPERATURE) || 1.0,
-                maxTokens: parseInt(process.env.MAX_TOKENS) || 200,
+                model: OPENAI_CONFIG.MODEL_NAME,
+                temperature: OPENAI_CONFIG.TEMPERATURE,
+                maxTokens: OPENAI_CONFIG.MAX_TOKENS,
                 cooldown: parseInt(process.env.COOLDOWN_DURATION) || 10,
                 subscribersOnly: process.env.SUBSCRIBERS_ONLY === 'true',
                 commandNames: (process.env.COMMAND_NAME || '!gpt').split(',').map(cmd => cmd.trim())
